@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Reply, ImageOff, X, ZoomIn } from 'lucide-react'
 import { Chip } from '@heroui/react'
 import { getImageUrl } from '../api/client'
@@ -113,8 +114,7 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
 
       </div>
 
-      {/* Action Sheet */}
-      {showReply && !isTip && actionSheetOpen && (
+      {showReply && !isTip && actionSheetOpen && createPortal(
         <div className="fixed inset-0 z-50" onClick={() => setActionSheetOpen(false)}>
           <div className="absolute inset-0 bg-black/30" />
           <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-lg animate-[slideUp_0.2s_ease-out] px-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)]"
@@ -131,11 +131,11 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
               取消
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Image Viewer */}
-      {viewerOpen && (
+      {viewerOpen && createPortal(
         <div className="fixed inset-0 z-[90] bg-black/80 flex items-center justify-center" onClick={() => setViewerOpen(false)}>
           <button onClick={() => setViewerOpen(false)}
             className="absolute top-4 right-4 z-10 p-2 bg-black/40 rounded-full text-white hover:bg-black/60 transition-colors">
@@ -185,7 +185,8 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
               onClick={() => { if (!dragMoved.current) setViewerOpen(false) }}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )
