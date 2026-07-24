@@ -34,7 +34,7 @@ export default function NavBar() {
     <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-divider">
       <div className="flex items-center h-12 px-2 gap-1 max-w-3xl mx-auto w-full">
         {isDetail && (
-          <Button isIconOnly variant="ghost" size="sm" onPress={() => { if (window.history.length > 1) nav(-1); else nav('/') }} aria-label="返回">
+          <Button isIconOnly variant="ghost" size="sm" onPress={() => nav(-1)} aria-label="返回">
             <ArrowLeft size={18} />
           </Button>
         )}
