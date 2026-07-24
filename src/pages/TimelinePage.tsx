@@ -2,23 +2,24 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTimelineThreads } from '../hooks/useApi'
 import ThreadCard from '../components/ThreadCard'
+import { ListSkeleton } from '../components/Skeleton'
 import { useSettingsStore } from '../store/settings'
 import type { ForumThread } from '../types/api'
 
 export default function TimelinePage() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const timelineId = id || ''
+  const nav = useNavigate()
+  const tlId = id || ''
   const [page, setPage] = useState(1)
   const [all, setAll] = useState<ForumThread[]>([])
   const { autoLoadNext } = useSettingsStore()
-  const { data: threads, isLoading, error } = useTimelineThreads(timelineId, page)
+  const { data: threads, isLoading, error } = useTimelineThreads(tlId, page)
 
   useEffect(() => {
     if (threads && page === 1) setAll(threads)
     else if (threads && page > 1) setAll(p => [...p, ...threads])
   }, [threads, page])
-  useEffect(() => { setPage(1); setAll([]) }, [timelineId])
+  useEffect(() => { setPage(1); setAll([]) }, [tlId])
 
   const loadMore = () => { if (!isLoading && threads?.length) setPage(p => p + 1) }
   useEffect(() => {
@@ -33,12 +34,12 @@ export default function TimelinePage() {
   return (
     <div className="min-h-full page-enter">
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-divider px-3 py-2.5">
-        <h2 className="text-base font-semibold text-default-900">时间线</h2>
+        <h2 className="text-base font-semibold text-foreground">时间线</h2>
       </div>
-      {isLoading && all.length === 0 ? <div className="py-8 text-center text-sm text-default-400">加载中...</div> : (
+      {isLoading && all.length === 0 ? <ListSkeleton count={6} /> : (
         <div>
-          {all.map(thread => <div key={thread.id} onClick={() => navigate(`/t/${thread.id}`)}><ThreadCard thread={thread} /></div>)}
-          <div className="p-4 text-center text-sm text-default-400">
+          {all.map(thread => <div key={thread.id} onClick={() => nav(`/t/${thread.id}`)}><ThreadCard thread={thread} /></div>)}
+          <div className="p-4 text-center text-sm text-muted">
             {isLoading && page > 1 ? '加载中…' : threads?.length === 0 && all.length > 0 ? '— 没有更多了 —' : null}
           </div>
         </div>

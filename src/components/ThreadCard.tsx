@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Star, MessageSquare, ChevronRight, X } from 'lucide-react'
+import { Chip } from '@heroui/react'
 import { getImageUrl } from '../api/client'
 import type { ForumThread } from '../types/api'
 import { stripHtml, truncateText, formatTime } from '../hooks/useUtils'
 import { useSettingsStore } from '../store/settings'
 import { useFavoritesStore } from '../store/favorites'
-
 interface Props { thread: ForumThread; forumName?: string }
 
 export default function ThreadCard({ thread, forumName }: Props) {
-  const navigate = useNavigate()
+  const nav = useNavigate()
   const { imageMode } = useSettingsStore()
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore()
   const [imgLoaded, setImgLoaded] = useState(false)
@@ -20,11 +20,11 @@ export default function ThreadCard({ thread, forumName }: Props) {
   const fav = isFavorite(thread.id)
   const preview = stripHtml(thread.content)
   const hasImage = thread.img && thread.ext
-  const replyCount = Number(thread.ReplyCount || 0)
+  const rc = Number(thread.ReplyCount || 0)
 
   return (
     <>
-      <div onClick={() => navigate(`/t/${thread.id}`)}
+      <div onClick={() => nav(`/t/${thread.id}`)}
         className="px-3 py-2.5 border-b border-divider cursor-pointer hover:bg-default-50 active:bg-default-100 transition-colors duration-150">
         <div className="flex gap-2.5">
           {hasImage && imageMode !== 'hidden' && (
@@ -43,36 +43,35 @@ export default function ThreadCard({ thread, forumName }: Props) {
             <div className="flex items-start justify-between gap-1">
               <div className="min-w-0 flex-1">
                 {thread.title && thread.title !== '无标题' && (
-                  <h3 className="font-medium text-default-900 truncate text-sm">{thread.title}</h3>
+                  <h3 className="font-medium text-foreground truncate text-sm">{thread.title}</h3>
                 )}
-                <div className="flex items-center gap-1 mt-0.5 text-[11px] text-default-400">
-                  <span className="text-primary font-mono">No.{thread.id}</span>
+                <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted">
+                  <span className="text-accent font-mono">No.{thread.id}</span>
                   {thread.user_hash && <span className={thread.admin ? 'text-danger font-bold' : ''}>{thread.user_hash}</span>}
-                  {forumName && <span className="bg-primary-50 dark:bg-primary-900/20 text-primary px-1.5 rounded text-[10px]">{forumName}</span>}
+                  {forumName && <Chip size="sm" variant="soft" color="accent" className="h-4 text-[10px]">{forumName}</Chip>}
                 </div>
               </div>
               <button onClick={e => { e.stopPropagation(); fav ? removeFavorite(thread.id) : addFavorite({
                 id: thread.id, title: thread.title || '无标题', forumName: forumName || '', forumId: thread.fid || '',
-                preview: truncateText(preview, 100), img: thread.img, ext: thread.ext, replyCount
+                preview: truncateText(preview, 100), img: thread.img, ext: thread.ext, replyCount: rc
               }) }}
-                className={`shrink-0 p-1 rounded-lg transition-colors ${fav ? 'text-warning bg-warning-50 dark:bg-warning-900/20' : 'text-default-300 hover:text-warning-400'}`}
-                aria-label={fav ? '取消收藏' : '收藏'}>
+                className={`shrink-0 p-1 rounded-lg transition-colors ${fav ? 'text-warning bg-warning-50 dark:bg-warning-900/20' : 'text-default-300 hover:text-warning-400'}`}>
                 <Star size={15} fill={fav ? 'currentColor' : 'none'} />
               </button>
             </div>
-            <p className="text-sm text-default-500 mt-1 line-clamp-2 leading-relaxed break-all">{truncateText(preview, 120)}</p>
+            <p className="text-sm text-muted mt-1 line-clamp-2 leading-relaxed break-all">{truncateText(preview, 120)}</p>
             <div className="flex items-center justify-between mt-1.5">
-              <div className="flex items-center gap-2.5 text-[11px] text-default-400">
+              <div className="flex items-center gap-2.5 text-[11px] text-muted">
                 <span>{formatTime(thread.now)}</span>
-                <span className="flex items-center gap-0.5"><MessageSquare size={11} />{replyCount}</span>
+                <span className="flex items-center gap-0.5"><MessageSquare size={11} />{rc}</span>
               </div>
               <ChevronRight size={13} className="text-default-300" />
             </div>
-            {thread.Replies && thread.Replies.length > 0 && (
+            {thread.Replies?.length > 0 && (
               <div className="mt-1.5 pl-2 border-l-2 border-default-200 dark:border-default-700 space-y-1">
                 {thread.Replies.slice(0, 3).map(r => (
-                  <div key={r.id} className="text-[11px] text-default-400 leading-relaxed break-all">
-                    <span className="text-primary-400">No.{r.id}</span><span className="mx-0.5">:</span>
+                  <div key={r.id} className="text-[11px] text-muted leading-relaxed break-all">
+                    <span className="text-accent-400">No.{r.id}</span><span className="mx-0.5">:</span>
                     {truncateText(stripHtml(r.content), 50)}
                   </div>
                 ))}
@@ -84,12 +83,12 @@ export default function ThreadCard({ thread, forumName }: Props) {
 
       {viewerOpen && (
         <div className="fixed inset-0 z-[90] bg-black/80 flex items-center justify-center" onClick={() => setViewerOpen(false)}>
-          <button onClick={() => setViewerOpen(false)} className="absolute top-4 right-4 z-10 p-2 bg-black/40 rounded-full text-white">
+          <button onClick={() => setViewerOpen(false)} className="absolute top-4 right-4 z-10 p-2 bg-black/40 rounded-full text-white hover:bg-black/60 transition-colors">
             <X size={20} />
           </button>
           <div onClick={e => e.stopPropagation()} className="max-w-[90vw] max-h-[85vh] overflow-hidden">
             <img src={getImageUrl(thread.img, thread.ext)} alt=""
-              className="max-w-[90vw] max-h-[85vh] object-contain cursor-grab select-none"
+              className="max-w-[90vw] max-h-[85vh] object-contain cursor-grab select-none transition-transform duration-75"
               style={{ transform: `scale(${zoom})` }}
               onWheel={e => { e.preventDefault(); setZoom(z => Math.max(0.5, Math.min(5, z - e.deltaY * 0.005))) }}
               onDoubleClick={() => setZoom(z => z === 1 ? 2 : 1)} />
