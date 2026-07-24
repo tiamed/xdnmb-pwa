@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { RefreshCw, AlertTriangle, Send, X, Image as ImageIcon } from 'lucide-react'
 import { Button } from '@heroui/react'
@@ -131,12 +132,13 @@ function CreateThreadPopup({
     setImage(f)
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex flex-col" onClick={onClose}>
       <div className="absolute inset-0 bg-black/30" />
       <div
-        className="relative mt-auto bg-background rounded-t-2xl p-4 animate-[slideUp_0.25s_ease-out] max-h-[80vh] overflow-y-auto"
+        className="relative mt-auto bg-background rounded-t-2xl p-4 animate-[slideUp_0.25s_ease-out] max-h-[80vh] overflow-y-auto overflow-x-hidden overscroll-contain"
         onClick={e => e.stopPropagation()}
+        onTouchMove={e => e.stopPropagation()}
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
       >
         <div className="flex items-center justify-between mb-3">
@@ -195,6 +197,7 @@ function CreateThreadPopup({
           {toast}
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   )
 }
