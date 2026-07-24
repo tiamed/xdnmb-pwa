@@ -33,7 +33,7 @@ function App() {
   return (
     <div className="h-dvh flex flex-col overflow-hidden">
       <NavBar />
-      <main ref={mainRef} className="flex-1 min-h-0 overflow-y-auto scrollbar-none"
+      <main ref={mainRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-none"
         style={{ paddingBottom: 'calc(52px + env(safe-area-inset-bottom, 0px))' }}>
         <Routes>
           <Route path="/" element={<HomePage />} />
