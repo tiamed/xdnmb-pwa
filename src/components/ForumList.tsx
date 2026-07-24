@@ -49,7 +49,7 @@ export default function ForumList({ onSelect }: ForumListProps) {
           </div>
           {timelines!.map(tl => (
             <button key={tl.id} onClick={() => handleTimeline(tl.id)}
-              className="w-full text-left px-2 py-1.5 rounded-lg text-default-600 hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/20 transition-colors">
+              className="w-full text-left px-5 py-1.5 text-default-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors rounded-r-lg">
               {tl.display_name || tl.name}
             </button>
           ))}

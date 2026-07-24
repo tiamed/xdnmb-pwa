@@ -65,8 +65,8 @@ export default function HomePage() {
               <div className="grid grid-cols-3 gap-2">
                 {timelines.map(t => (
                   <button key={t.id} onClick={() => goTimeline(t.id)}
-                    className="flex items-center justify-center p-3 rounded-xl bg-default-100 hover:bg-default-200 dark:bg-default-50 dark:hover:bg-default-100 transition-all active:scale-95 border border-transparent hover:border-accent/20">
-                    <span className="text-xs text-default-600 font-medium truncate">{t.display_name || t.name}</span>
+                    className="px-2.5 py-1 text-xs bg-background dark:bg-default-100 text-default-600 rounded-lg hover:bg-accent-50 dark:hover:bg-accent-900/20 hover:text-accent-600 transition-all border border-divider hover:border-accent/30 active:scale-95 truncate">
+                    {t.display_name || t.name}
                   </button>
                 ))}
               </div>
