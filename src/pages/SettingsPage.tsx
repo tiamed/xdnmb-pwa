@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useSettingsStore, type ImageMode, type ReplySort } from '../store/settings'
-import { getApiBaseUrl, setApiBase } from '../api/client'
-import { Button } from '@heroui/react'
-import { Sun, Moon, Monitor, Minus, Plus } from 'lucide-react'
+import { getApiBaseUrl, setApiBase, getFeed } from '../api/client'
+import { useFavoritesStore } from '../store/favorites'
+import { Button, Chip } from '@heroui/react'
+import { Sun, Moon, Monitor, Minus, Plus, RefreshCw } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
 export default function SettingsPage() {
@@ -12,10 +13,41 @@ export default function SettingsPage() {
     autoLoadNext, setAutoLoadNext, fontSize, setFontSize,
     feedUuid, setFeedUuid, userHash, setUserHash,
   } = useSettingsStore()
+  const { addFavorite } = useFavoritesStore()
 
   const [apiUrl, setApiUrl] = useState(getApiBaseUrl())
   const [hashInput, setHashInput] = useState(userHash)
   const [uuidInput, setUuidInput] = useState(feedUuid)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState('')
+
+  const handleSaveUuid = async () => {
+    const uuid = uuidInput.trim()
+    setFeedUuid(uuid)
+    if (!uuid) return
+
+    setSyncing(true)
+    setSyncMsg('同步中…')
+    try {
+      const items = await getFeed(uuid, 1)
+      let count = 0
+      for (const item of items) {
+        addFavorite({
+          id: item.id, title: item.title || '无标题', forumName: '',
+          forumId: item.fid, preview: item.content,
+          img: item.img, ext: item.ext, replyCount: Number(item.reply_count || 0),
+        })
+        count++
+      }
+      setSyncMsg(`已同步 ${count} 个订阅`)
+      setTimeout(() => setSyncMsg(''), 3000)
+    } catch {
+      setSyncMsg('同步失败，请检查 UUID 是否正确')
+      setTimeout(() => setSyncMsg(''), 3000)
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const themeOptions = [
     { value: 'light', icon: Sun },
@@ -90,8 +122,18 @@ export default function SettingsPage() {
           <div className="flex gap-1.5 w-full">
             <input type="text" value={uuidInput} onChange={e => setUuidInput(e.target.value)} placeholder="feed uuid"
               className="flex-1 px-2.5 py-1.5 text-sm rounded-lg bg-default-100 text-foreground focus:outline-none focus:ring-2 focus:ring-accent border-none min-w-0" />
-            <Button size="sm" variant="primary" onPress={() => setFeedUuid(uuidInput.trim())}>保存</Button>
+            <Button size="sm" variant="primary" onPress={handleSaveUuid} isDisabled={syncing}>
+              {syncing ? <RefreshCw size={14} className="animate-spin" /> : null}
+              {syncing ? '同步中…' : '同步'}
+            </Button>
           </div>
+          {syncMsg && (
+            <div className="px-4 pb-2">
+              <Chip size="sm" variant="soft" color={syncMsg.includes('失败') ? 'danger' : 'success'} className="text-xs">
+                {syncMsg}
+              </Chip>
+            </div>
+          )}
         </Row>
       </Section>
 
