@@ -1,6 +1,7 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect, useEffect, useRef } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { SearchX } from 'lucide-react'
+import { useSettingsStore } from './store/settings'
 import NavBar from './components/NavBar'
 import BottomNav from './components/BottomNav'
 import HomePage from './pages/HomePage'
@@ -15,9 +16,23 @@ function App() {
   const location = useLocation()
   const mainRef = useRef<HTMLElement>(null)
 
+  useLayoutEffect(() => { useSettingsStore.getState().applyTheme() }, [])
+
   useLayoutEffect(() => {
     mainRef.current?.scrollTo(0, 0)
   }, [location.pathname])
+
+  useEffect(() => {
+    const el = document.documentElement
+    const update = () => {
+      const meta = document.querySelector('meta[name="theme-color"]')
+      if (meta) meta.setAttribute('content', el.classList.contains('dark') ? '#16171d' : '#f5f5f5')
+    }
+    const mo = new MutationObserver(update)
+    mo.observe(el, { attributes: true, attributeFilter: ['class'] })
+    update()
+    return () => mo.disconnect()
+  }, [])
 
   const getActiveTab = () => {
     const p = location.pathname

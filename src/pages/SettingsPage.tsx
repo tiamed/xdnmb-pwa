@@ -4,13 +4,11 @@ import { getApiBaseUrl, setApiBase, getFeed } from '../api/client'
 import { useFavoritesStore } from '../store/favorites'
 import { Button } from '@heroui/react'
 import { Sun, Moon, Monitor, RefreshCw, Trash2, PlusCircle, Check } from 'lucide-react'
-import { useTheme } from 'next-themes'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useTheme()
   const {
-    imageMode, setImageMode, replySort, setReplySort,
+    theme, setTheme, imageMode, setImageMode, replySort, setReplySort,
     autoLoadNext, setAutoLoadNext,
     feedUuid, setFeedUuid,
     cookies, activeCookieId,
