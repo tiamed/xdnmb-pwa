@@ -167,7 +167,12 @@ export default function SettingsPage() {
 
       <Section title="关于">
         <Row label="版本"><span className="text-sm text-muted">1.0.0</span></Row>
-        <Row label="技术栈"><span className="text-sm text-muted">React + Vite + HeroUI + PWA</span></Row>
+        <Row label="GitHub">
+          <a href="https://github.com/tiamed/xdnmb-pwa" target="_blank" rel="noopener noreferrer"
+            className="text-sm text-accent hover:underline inline-flex items-center gap-1">
+            tiamed/xdnmb-pwa
+          </a>
+        </Row>
       </Section>
 
       {toast && (
