@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Star } from 'lucide-react'
 import { Chip } from '@heroui/react'
 import { useFavoritesStore } from '../store/favorites'
+import { stripHtml } from '../hooks/useUtils'
 import type { ForumThread } from '../types/api'
 
 export default function FavoritesPage() {
@@ -23,9 +24,8 @@ export default function FavoritesPage() {
           <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted">
             <span className="text-accent font-mono">No.{t.id}</span>
             {items.find(i => i.id === t.id)?.forumName && <Chip size="sm" variant="soft" color="accent" className="h-4 text-[10px]">{items.find(i => i.id === t.id)?.forumName}</Chip>}
-            <span className="ml-auto">{t.ReplyCount} 回复</span>
           </div>
-          <p className="text-sm text-muted mt-1 line-clamp-2 break-all">{t.content}</p>
+          <p className="text-sm text-muted mt-1 line-clamp-2 break-all">{stripHtml(t.content)}</p>
         </div>)}</div>
       )}
     </div>
