@@ -92,7 +92,7 @@ export default function ThreadCard({ thread, forumName }: Props) {
             <img src={getImageUrl(thread.img, thread.ext)} alt=""
               className="max-w-full max-h-full object-contain cursor-grab active:cursor-grabbing"
               style={{ transform: `scale(${zoom}) translate(${pos.x / zoom}px, ${pos.y / zoom}px)` }}
-              onWheel={e => { e.preventDefault(); setZoom(z => Math.max(0.5, Math.min(5, z - e.deltaY * 0.005))) }}
+              onWheel={e => { e.preventDefault(); setZoom(z => Math.max(0.5, Math.min(10, z - e.deltaY * 0.005))) }}
               onMouseDown={e => {
                 if (e.button !== 0) return
                 const sx = e.clientX - pos.x, sy = e.clientY - pos.y
@@ -122,7 +122,7 @@ export default function ThreadCard({ thread, forumName }: Props) {
                   const dy = e.touches[0].clientY - e.touches[1].clientY
                   const dist = Math.hypot(dx, dy)
                   const scale = dist / cur.dist
-                  setZoom(Math.max(0.5, Math.min(5, cur.zoom * scale)))
+                  setZoom(Math.max(0.5, Math.min(10, cur.zoom * scale)))
                 }
               }}
               onTouchEnd={() => { touchRef.current = null }}
