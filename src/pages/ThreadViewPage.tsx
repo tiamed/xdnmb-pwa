@@ -81,7 +81,7 @@ export default function ThreadViewPage() {
 
       {/* toast */}
       {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-xl text-sm font-medium text-white bg-default-900/90 dark:bg-default-100/90 dark:text-default-900 animate-[fadeSlideIn_.2s_ease-out] shadow-lg pointer-events-none">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-xl text-sm font-medium bg-foreground/95 text-background shadow-lg animate-[fadeSlideIn_.2s_ease-out] pointer-events-none">
           {toast}
         </div>
       )}
