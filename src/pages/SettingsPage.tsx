@@ -64,10 +64,6 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-full page-enter pb-8">
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-divider px-3 py-2.5">
-        <h2 className="text-base font-semibold text-foreground">设置</h2>
-      </div>
-
       <Section title="外观">
         <Row label="主题">
           <div className="flex gap-1">
@@ -143,7 +139,7 @@ export default function SettingsPage() {
       </Section>
 
       {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-xl text-sm font-medium text-white bg-default-900/90 dark:bg-default-100/90 dark:text-default-900 animate-[fadeSlideIn_.2s_ease-out] shadow-lg pointer-events-none">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-xl text-sm font-medium bg-foreground/95 text-background shadow-lg animate-[fadeSlideIn_.2s_ease-out] pointer-events-none">
           {toast}
         </div>
       )}

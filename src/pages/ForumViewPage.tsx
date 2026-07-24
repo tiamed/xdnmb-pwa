@@ -41,10 +41,6 @@ export default function ForumViewPage() {
 
   return (
     <div className="min-h-full page-enter">
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-divider px-3 py-2.5">
-        <h2 className="text-base font-semibold text-foreground">{forumName || `版块 ${forumId}`}</h2>
-      </div>
-
       {isLoading ? <ListSkeleton count={8} /> : (
         <div>
           {threads.map(thread => (

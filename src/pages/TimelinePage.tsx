@@ -25,9 +25,6 @@ export default function TimelinePage() {
 
   return (
     <div className="min-h-full page-enter">
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-divider px-3 py-2.5">
-        <h2 className="text-base font-semibold text-foreground">时间线</h2>
-      </div>
       {isLoading ? <ListSkeleton count={6} /> : (
         <div>
           {threads.map(thread => <div key={thread.id} onClick={() => nav(`/t/${thread.id}`)}><ThreadCard thread={thread} /></div>)}
