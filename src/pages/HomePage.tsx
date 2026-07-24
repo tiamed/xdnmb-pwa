@@ -48,7 +48,8 @@ export default function HomePage() {
 
       <aside className="hidden md:block w-64 border-r border-divider overflow-y-auto shrink-0 scrollbar-none"><ForumList /></aside>
 
-      <main className="flex-1 overflow-y-auto page-enter scrollbar-none">
+      <main className="flex-1 overflow-y-auto page-enter scrollbar-none"
+        style={{ paddingBottom: 'calc(52px + env(safe-area-inset-bottom, 0px))' }}>
         <div className="md:hidden flex items-center px-4 py-2.5 border-b border-divider bg-background/80 backdrop-blur-sm sticky top-0 z-10">
           <button onClick={() => setSidebarOpen(true)} className="flex items-center gap-1.5 text-sm text-muted hover:text-foreground transition-colors">
             <Menu size={18} /> 版块
