@@ -99,10 +99,11 @@ export interface FeedItem {
 }
 
 export interface Timeline {
-  id: string
+  id: number
   name: string
-  displayName?: string
-  msg?: string
+  display_name?: string
+  notice?: string
+  max_page?: number
 }
 
 export interface CdnInfo {
