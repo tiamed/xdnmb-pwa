@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Reply, ImageOff, X, ZoomIn } from 'lucide-react'
-import { Chip, Modal, Button } from '@heroui/react'
+import { Chip } from '@heroui/react'
 import { getImageUrl } from '../api/client'
 import { useSettingsStore } from '../store/settings'
 import { formatTime } from '../hooks/useUtils'
@@ -112,22 +112,24 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
       </div>
 
       {/* Action Sheet */}
-      {showReply && !isTip && (
-        <Modal>
-          <Modal.Backdrop isOpen={actionSheetOpen} onOpenChange={setActionSheetOpen}>
-            <Modal.Container placement="bottom">
-              <Modal.Dialog>
-                <Modal.Body className="px-3 py-4">
-                  <Button variant="tertiary" fullWidth size="lg" onPress={() => { onReply?.(post.id); setActionSheetOpen(false) }}
-                    className="flex items-center justify-center gap-2">
-                    <Reply size={16} />
-                    回复
-                  </Button>
-                </Modal.Body>
-              </Modal.Dialog>
-            </Modal.Container>
-          </Modal.Backdrop>
-        </Modal>
+      {showReply && !isTip && actionSheetOpen && (
+        <div className="fixed inset-0 z-50" onClick={() => setActionSheetOpen(false)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute bottom-0 left-0 right-0 mx-auto max-w-lg animate-[slideUp_0.2s_ease-out] px-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)]"
+            onClick={e => e.stopPropagation()}>
+            <div className="bg-background rounded-2xl overflow-hidden shadow-xl border border-divider/50">
+              <button onClick={() => { onReply?.(post.id); setActionSheetOpen(false) }}
+                className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 text-sm font-medium text-foreground hover:bg-default-100 active:bg-default-200 transition-colors">
+                <Reply size={16} className="text-accent" />
+                回复
+              </button>
+            </div>
+            <button onClick={() => setActionSheetOpen(false)}
+              className="w-full mt-2 py-3.5 text-sm font-medium text-foreground bg-background rounded-2xl shadow-sm border border-divider/50 hover:bg-default-100 active:bg-default-200 transition-colors">
+              取消
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Image Viewer */}
