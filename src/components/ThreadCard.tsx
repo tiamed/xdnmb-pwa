@@ -18,6 +18,7 @@ export default function ThreadCard({ thread, forumName, onOpen }: Props) {
   const [pos, setPos] = useState({ x: 0, y: 0 })
   const touchRef = useRef<{ x: number; y: number; dist: number; zoom: number; px: number; py: number } | null>(null)
   const wheelRef = useRef<HTMLImageElement>(null)
+  const dragMoved = useRef(false)
   useEffect(() => {
     const el = wheelRef.current
     if (!el) return
@@ -27,7 +28,7 @@ export default function ThreadCard({ thread, forumName, onOpen }: Props) {
     }
     el.addEventListener('wheel', handler, { passive: false })
     return () => el.removeEventListener('wheel', handler)
-  }, [])
+  }, [viewerOpen])
   const fav = isFavorite(thread.id)
   const preview = stripHtml(thread.content)
   const hasImage = thread.img && thread.ext
@@ -103,8 +104,9 @@ export default function ThreadCard({ thread, forumName, onOpen }: Props) {
               style={{ transform: `scale(${zoom}) translate(${pos.x / zoom}px, ${pos.y / zoom}px)` }}
               onMouseDown={e => {
                 if (e.button !== 0) return
+                dragMoved.current = false
                 const sx = e.clientX - pos.x, sy = e.clientY - pos.y
-                const mv = (e: MouseEvent) => setPos({ x: e.clientX - sx, y: e.clientY - sy })
+                const mv = (e: MouseEvent) => { dragMoved.current = true; setPos({ x: e.clientX - sx, y: e.clientY - sy }) }
                 const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up) }
                 document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up)
               }}
@@ -134,7 +136,7 @@ export default function ThreadCard({ thread, forumName, onOpen }: Props) {
                 }
               }}
               onTouchEnd={() => { touchRef.current = null }}
-              onDoubleClick={() => { if (zoom > 1) { setZoom(1); setPos({ x: 0, y: 0 }) } else { setZoom(2) } }} />
+              onClick={() => { if (!dragMoved.current) setViewerOpen(false) }} />
           </div>
         </div>
       )}

@@ -26,6 +26,7 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
   const [actionSheetOpen, setActionSheetOpen] = useState(false)
   const touchRef = useRef<{ x: number; y: number; dist: number; zoom: number; px: number; py: number } | null>(null)
   const wheelRef = useRef<HTMLImageElement>(null)
+  const dragMoved = useRef(false)
   useEffect(() => {
     const el = wheelRef.current
     if (!el) return
@@ -35,7 +36,7 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
     }
     el.addEventListener('wheel', handler, { passive: false })
     return () => el.removeEventListener('wheel', handler)
-  }, [])
+  }, [viewerOpen])
 
   const hasImage = post.img && post.ext
   const isPoMain = isPo || post.user_hash === poHash
@@ -152,7 +153,7 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
             <X size={20} />
           </button>
           <div className="text-white/60 text-xs absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/40 rounded-full px-3 py-1 pointer-events-none">
-            滚轮缩放 · 拖拽移动 · 双击复原
+            滚轮缩放 · 拖拽移动 · 单击关闭
           </div>
           <div onClick={e => e.stopPropagation()} className="w-screen h-screen overflow-hidden select-none flex items-center justify-center">
             <img ref={wheelRef} src={getImageUrl(post.img, post.ext)} alt=""
@@ -160,8 +161,9 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
               style={{ transform: `scale(${zoom}) translate(${pos.x / zoom}px, ${pos.y / zoom}px)` }}
               onMouseDown={e => {
                 if (e.button !== 0) return
+                dragMoved.current = false
                 const sx = e.clientX - pos.x, sy = e.clientY - pos.y
-                const mv = (e: MouseEvent) => setPos({ x: e.clientX - sx, y: e.clientY - sy })
+                const mv = (e: MouseEvent) => { dragMoved.current = true; setPos({ x: e.clientX - sx, y: e.clientY - sy }) }
                 const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up) }
                 document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up)
               }}
@@ -191,7 +193,7 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
                 }
               }}
               onTouchEnd={() => { touchRef.current = null }}
-              onDoubleClick={() => { if (zoom > 1) { setZoom(1); setPos({ x: 0, y: 0 }) } else { setZoom(2) } }}
+              onClick={() => { if (!dragMoved.current) setViewerOpen(false) }}
             />
           </div>
         </div>
