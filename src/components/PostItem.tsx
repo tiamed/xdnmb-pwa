@@ -166,6 +166,7 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
               onTouchMove={e => {
                 const cur = touchRef.current
                 if (!cur) return
+                e.preventDefault()
                 if (e.touches.length === 1) {
                   const dx = e.touches[0].clientX - cur.x
                   const dy = e.touches[0].clientY - cur.y
