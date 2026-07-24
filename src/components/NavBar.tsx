@@ -20,7 +20,7 @@ export default function NavBar() {
   const historyCount = useHistoryStore(s => s.items.length)
   const clearHistory = useHistoryStore(s => s.clearHistory)
 
-  const isDetail = isThread || loc.pathname.startsWith('/f/') || loc.pathname.startsWith('/timeline/') || loc.pathname.startsWith('/favorites') || loc.pathname.startsWith('/history') || loc.pathname.startsWith('/settings')
+  const isDetail = isThread || loc.pathname.startsWith('/f/') || loc.pathname.startsWith('/timeline/')
 
   const forumId = loc.pathname.startsWith('/f/') ? loc.pathname.split('/')[2] : ''
   let forumName = ''
