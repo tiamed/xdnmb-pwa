@@ -3,7 +3,7 @@ import { useSettingsStore, type ImageMode, type ReplySort } from '../store/setti
 import { getApiBaseUrl, setApiBase, getFeed } from '../api/client'
 import { useFavoritesStore } from '../store/favorites'
 import { Button } from '@heroui/react'
-import { Sun, Moon, Monitor, Minus, Plus, RefreshCw } from 'lucide-react'
+import { Sun, Moon, Monitor, Minus, Plus, RefreshCw, Trash2, PlusCircle, Check } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -12,16 +12,27 @@ export default function SettingsPage() {
   const {
     imageMode, setImageMode, replySort, setReplySort,
     autoLoadNext, setAutoLoadNext, fontSize, setFontSize,
-    feedUuid, setFeedUuid, userHash, setUserHash,
+    feedUuid, setFeedUuid,
+    cookies, activeCookieId,
+    addCookie, updateCookie, removeCookie, setActiveCookie,
   } = useSettingsStore()
   const { syncFromFeed } = useFavoritesStore()
   const queryClient = useQueryClient()
 
   const [apiUrl, setApiUrl] = useState(getApiBaseUrl())
-  const [hashInput, setHashInput] = useState(userHash)
+  const [newLabel, setNewLabel] = useState('')
+  const [newHash, setNewHash] = useState('')
   const [uuidInput, setUuidInput] = useState(feedUuid)
   const [syncing, setSyncing] = useState(false)
   const [toast, setToast] = useState('')
+
+  const addNewCookie = () => {
+    const h = newHash.trim()
+    if (!h) return
+    addCookie(newLabel, h)
+    setNewLabel(''); setNewHash('')
+    setToast('已添加 Cookie'); setTimeout(() => setToast(''), 1500)
+  }
 
   const handleSaveUuid = async () => {
     const uuid = uuidInput.trim()
@@ -114,13 +125,45 @@ export default function SettingsPage() {
       </Section>
 
       <Section title="账户">
-        <Row label="Cookies">
-          <div className="flex gap-1.5 w-full">
-            <input type="text" value={hashInput} onChange={e => setHashInput(e.target.value)} placeholder="userhash"
-              className="flex-1 px-2.5 py-1.5 text-sm rounded-lg bg-default-100 text-foreground focus:outline-none focus:ring-2 focus:ring-accent border-none min-w-0" />
-            <Button size="sm" variant="primary" onPress={() => setUserHash(hashInput.trim())}>保存</Button>
+        <div className="px-4 py-3 border-b border-divider">
+          <div className="text-sm text-default-700 mb-2">Cookies</div>
+          <div className="space-y-2">
+            {cookies.length === 0 && (
+              <div className="text-xs text-muted py-2">尚未添加 Cookie，发帖/回复与受限内容将不可用。</div>
+            )}
+            {cookies.map((c) => {
+              const active = c.id === activeCookieId
+              return (
+                <div key={c.id} className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border ${active ? 'border-accent bg-accent-50/40 dark:bg-accent-900/10' : 'border-divider'}`}>
+                  <button onClick={() => setActiveCookie(active ? null : c.id)} aria-label={active ? '取消使用' : '设为当前'}
+                    className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${active ? 'bg-accent text-accent-foreground' : 'bg-default-200 dark:bg-default-700 text-transparent hover:text-default-500'}`}>
+                    <Check size={12} strokeWidth={active ? 3 : 2} />
+                  </button>
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <input value={c.label} onChange={(e) => updateCookie(c.id, { label: e.target.value })} placeholder="备注"
+                      className="text-sm font-medium text-foreground bg-transparent focus:outline-none focus:ring-1 focus:ring-accent rounded px-1 py-0.5 -mx-1 min-w-0" />
+                    <input value={c.hash} onChange={(e) => updateCookie(c.id, { hash: e.target.value })} placeholder="userhash"
+                      className="text-xs font-mono text-muted bg-default-100 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-accent min-w-0" />
+                  </div>
+                  <button onClick={() => removeCookie(c.id)} aria-label="删除" className="shrink-0 p-1 rounded-lg text-default-400 hover:text-danger hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors">
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              )
+            })}
           </div>
-        </Row>
+          <div className="mt-2.5 pt-2.5 border-t border-divider space-y-2">
+            <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="备注（可选）"
+              className="w-full text-sm px-2.5 py-1.5 rounded-lg bg-default-100 text-foreground focus:outline-none focus:ring-2 focus:ring-accent border-none" />
+            <div className="flex gap-1.5">
+              <input value={newHash} onChange={(e) => setNewHash(e.target.value)} placeholder="userhash"
+                className="flex-1 px-2.5 py-1.5 text-xs font-mono rounded-lg bg-default-100 text-foreground focus:outline-none focus:ring-2 focus:ring-accent border-none min-w-0" />
+              <Button size="sm" variant="primary" onPress={addNewCookie} isDisabled={!newHash.trim()}>
+                <PlusCircle size={14} />添加
+              </Button>
+            </div>
+          </div>
+        </div>
         <Row label="订阅 UUID">
           <div className="flex gap-1.5 w-full">
             <input type="text" value={uuidInput} onChange={e => setUuidInput(e.target.value)} placeholder="feed uuid"
