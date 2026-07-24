@@ -1,43 +1,48 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "@heroui/styles";
 
 :root {
-  color-scheme: light dark;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
+html, body, #root { height: 100%; margin: 0; padding: 0; }
 
-body {
-  @apply bg-white text-gray-700 dark:bg-[#16171d] dark:text-gray-400;
-}
-
-/* 隐藏滚动条但保留滚动功能 */
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.hide-scrollbar {
+@utility scrollbar-none {
+  &::-webkit-scrollbar { display: none; }
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-/* 引用链接样式 */
 .quote-link {
-  @apply text-green-600 dark:text-green-400 cursor-pointer hover:underline;
+  color: var(--success);
+  cursor: pointer;
+  text-decoration: underline;
+  transition: opacity .15s;
+}
+.quote-link:hover { opacity: .8; }
+
+.spoiler {
+  background: oklch(0.375 0.01 286) !important;
+  color: oklch(0.375 0.01 286) !important;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 3px;
+}
+.dark .spoiler {
+  background: #000 !important;
+  color: #000 !important;
+}
+.spoiler:hover, .spoiler.revealed {
+  color: oklch(0.55 0.015 286) !important;
+}
+.dark .spoiler:hover, .dark .spoiler.revealed {
+  color: oklch(0.7 0.015 286) !important;
 }
 
-/* 隐藏内容 [h]...[/h] */
-.spoiler {
-  @apply bg-gray-900 text-gray-900 dark:bg-black dark:text-black cursor-pointer select-none;
-}
-.spoiler:hover,
-.spoiler.revealed {
-  @apply text-gray-700 dark:text-gray-300;
+.page-enter { animation: fadeSlideIn .2s ease-out; }
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }

@@ -1,68 +1,51 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { Search } from 'lucide-react'
 import { useSearch } from '../hooks/useApi'
 import ThreadCard from '../components/ThreadCard'
 import { useDebounce } from '../hooks/useUtils'
 
 export default function SearchPage() {
-  const [searchParams] = useSearchParams()
+  const [sp] = useSearchParams()
   const navigate = useNavigate()
-  const initialQuery = searchParams.get('q') || ''
-  const [query, setQuery] = useState(initialQuery)
-  const debouncedQuery = useDebounce(query, 500)
+  const init = sp.get('q') || ''
+  const [q, setQ] = useState(init)
+  const debounced = useDebounce(q, 500)
+  const { data: results, isLoading, error } = useSearch(debounced)
 
-  const { data: results, isLoading, error } = useSearch(debouncedQuery)
-
-  useEffect(() => {
-    if (debouncedQuery && debouncedQuery !== initialQuery) {
-      navigate(`/search?q=${encodeURIComponent(debouncedQuery)}`, {
-        replace: true,
-      })
-    }
-  }, [debouncedQuery])
+  useEffect(() => { if (debounced && debounced !== init) navigate(`/search?q=${encodeURIComponent(debounced)}`, { replace: true }) }, [debounced])
 
   return (
-    <div className="min-h-full">
-      <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="输入关键词搜索..."
-          autoFocus
-          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
-        />
+    <div className="min-h-full page-enter">
+      <div className="p-3 border-b border-divider sticky top-0 z-20 bg-background/80 backdrop-blur-sm">
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-default-400" />
+          <input type="text" value={q} onChange={e => setQ(e.target.value)} placeholder="搜索串…" autoFocus
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-xl bg-default-100 text-default-900 focus:outline-none focus:ring-2 focus:ring-primary placeholder-default-400" />
+        </div>
       </div>
 
-      {isLoading && (
-        <div className="p-8 text-center text-gray-500">搜索中...</div>
-      )}
-
-      {error && (
-        <div className="p-8 text-center text-red-500">
-          搜索失败: {error.message}
+      {isLoading && <div className="py-2">{Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="px-3 py-2.5 border-b border-divider">
+          <div className="flex gap-2.5">
+            <div className="w-[68px] h-[68px] rounded-lg bg-default-200 shimmer shrink-0" />
+            <div className="flex-1 space-y-2"><div className="h-4 w-3/5 rounded bg-default-200 shimmer" /><div className="h-3 w-2/5 rounded bg-default-200 shimmer" /><div className="h-3 w-full rounded bg-default-200 shimmer" /></div>
+          </div>
         </div>
-      )}
+      ))}</div>}
 
-      {!isLoading && !error && debouncedQuery && results?.length === 0 && (
-        <div className="p-8 text-center text-gray-500">
-          没有找到相关结果
-        </div>
+      {error && <div className="py-20 text-center text-danger text-sm">搜索失败</div>}
+
+      {!isLoading && !error && debounced && results?.length === 0 && (
+        <div className="py-20 text-center text-default-400"><Search size={40} className="mx-auto mb-3 opacity-30" /><p className="text-sm">没有找到结果</p></div>
       )}
 
       {results && results.length > 0 && (
-        <div>
-          <div className="px-3 py-2 text-xs text-gray-500 bg-gray-50 dark:bg-gray-800/30">
-            找到 {results.length} 个结果
-          </div>
-          {results.map((thread) => (
-            <ThreadCard key={thread.id} thread={thread} />
-          ))}
-        </div>
+        <div>{results.map(t => <ThreadCard key={t.id} thread={t} />)}</div>
       )}
 
-      {!debouncedQuery && !isLoading && (
-        <div className="p-8 text-center text-gray-400">输入关键词开始搜索</div>
+      {!debounced && !isLoading && (
+        <div className="py-20 text-center text-default-400"><Search size={40} className="mx-auto mb-3 opacity-20" /><p className="text-sm">输入关键词搜索</p></div>
       )}
     </div>
   )
