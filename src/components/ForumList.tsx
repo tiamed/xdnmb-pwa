@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForumList, useTimelineList } from '../hooks/useApi'
 import type { Forum } from '../types/api'
-import { ChevronDown, ChevronRight, Clock } from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 
 interface ForumListProps {
   onSelect?: () => void
@@ -12,7 +12,8 @@ export default function ForumList({ onSelect }: ForumListProps) {
   const navigate = useNavigate()
   const { data: forumGroups, isLoading } = useForumList()
   const { data: timelines } = useTimelineList()
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const TIMELINE_KEY = '__timelines__'
+  const [expanded, setExpanded] = useState<Set<string>>(new Set([TIMELINE_KEY]))
 
   const toggle = (id: string) => {
     setExpanded(prev => {
@@ -43,11 +44,13 @@ export default function ForumList({ onSelect }: ForumListProps) {
     <div className="py-1 text-sm">
       {/* 时间线 */}
       {hasTimelines && (
-        <div className="px-3 py-1.5">
-          <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-default-400 uppercase tracking-wider">
-            <Clock size={12} /> 时间线
-          </div>
-          {timelines!.map(tl => (
+        <div>
+          <button onClick={() => toggle(TIMELINE_KEY)}
+            className="w-full flex items-center justify-between px-3 py-2 text-default-700 hover:bg-default-100 transition-colors">
+            <span className="font-medium">时间线</span>
+            {expanded.has(TIMELINE_KEY) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </button>
+          {expanded.has(TIMELINE_KEY) && timelines!.map(tl => (
             <button key={tl.id} onClick={() => handleTimeline(tl.id)}
               className="w-full text-left px-5 py-1.5 text-default-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors rounded-r-lg">
               {tl.display_name || tl.name}
