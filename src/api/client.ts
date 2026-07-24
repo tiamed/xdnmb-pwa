@@ -8,33 +8,21 @@ import type {
   Timeline,
 } from '../types/api'
 
-const API_BASE = 'https://api.nmb.best/api/'
-const MAIN_SITE = 'https://www.nmbxd1.com'
-const CDN_BASE = 'https://image.nmb.best/'
+const API_BASE = '/api/'
+const MAIN_POST = '/post/'
+const CDN_BASE = ''
 
 let apiBase = API_BASE
-let mainUrl = MAIN_SITE
+let mainPost = MAIN_POST
 let cdnUrl = CDN_BASE
 
 export function getImageUrl(img: string, ext: string, thumb = false): string {
   if (!img) return ''
-  const path = thumb ? 'thumb/' : 'image/'
-  return `${cdnUrl}${path}${img}${ext}`
-}
-
-export async function updateUrls(): Promise<void> {
-  try {
-    const cdnRes = await fetch(`${apiBase}getCdnPath`)
-    if (cdnRes.ok) {
-      const cdns: CdnInfo[] = await cdnRes.json()
-      if (cdns.length > 0 && cdns[0].url) {
-        cdnUrl = cdns[0].url
-        if (!cdnUrl.endsWith('/')) cdnUrl += '/'
-      }
-    }
-  } catch {
-    // 忽略错误
+  const path = thumb ? 'thumb' : 'image'
+  if (cdnUrl) {
+    return `${cdnUrl}${path}/${img}${ext}`
   }
+  return `/${path}/${img}${ext}`
 }
 
 export function getApiBaseUrl(): string {
@@ -44,6 +32,23 @@ export function getApiBaseUrl(): string {
 export function setApiBase(url: string): void {
   apiBase = url
   if (!apiBase.endsWith('/')) apiBase += '/'
+}
+
+export function setCdnBase(url: string): void {
+  cdnUrl = url
+  if (cdnUrl && !cdnUrl.endsWith('/')) cdnUrl += '/'
+}
+
+export async function updateUrls(): Promise<void> {
+  try {
+    const res = await apiFetch<CdnInfo[]>('getCdnPath')
+    if (Array.isArray(res) && res.length > 0 && res[0].url) {
+      cdnUrl = res[0].url
+      if (!cdnUrl.endsWith('/')) cdnUrl += '/'
+    }
+  } catch {
+    // 忽略错误
+  }
 }
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -60,7 +65,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...init,
     headers,
-    credentials: 'omit',
+    credentials: 'same-origin',
   })
 
   if (!res.ok) {
@@ -153,10 +158,10 @@ export async function postThread(params: {
   if (params.image) formData.append('image', params.image)
   if (params.watermark) formData.append('water', 'true')
 
-  const res = await fetch(`${mainUrl}/Home/Forum/doPostThread.html`, {
+  const res = await fetch(`${mainPost}Home/Forum/doPostThread.html`, {
     method: 'POST',
     body: formData,
-    credentials: 'include',
+    credentials: 'same-origin',
   })
 
   if (!res.ok) {
@@ -188,10 +193,10 @@ export async function replyThread(params: {
   if (params.image) formData.append('image', params.image)
   if (params.watermark) formData.append('water', 'true')
 
-  const res = await fetch(`${mainUrl}/Home/Forum/doReplyThread.html`, {
+  const res = await fetch(`${mainPost}Home/Forum/doReplyThread.html`, {
     method: 'POST',
     body: formData,
-    credentials: 'include',
+    credentials: 'same-origin',
   })
 
   if (!res.ok) {

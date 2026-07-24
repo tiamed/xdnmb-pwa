@@ -108,6 +108,10 @@ export default function SettingsPage() {
             </button>
           </div>
         </Row>
+        <p className="px-4 pb-3 text-xs text-gray-500 dark:text-gray-500">
+          默认 <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">/api/</code>
+          同源代理。如需使用第三方 API 可在此自定义。
+        </p>
       </Section>
 
       {/* 账户 */}

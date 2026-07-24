@@ -36,6 +36,7 @@ export const useSettingsStore = create<SettingsState>()(
       fontSize: 16,
       feedUuid: '',
       userHash: '',
+      proxyUrl: '',
 
       setTheme: (theme) => {
         set({ theme })

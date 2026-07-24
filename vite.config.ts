@@ -2,7 +2,6 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vite.dev/config/
 export default defineConfig({
   base: './',
   plugins: [
@@ -33,4 +32,28 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://api.nmb.best/api',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      '/image': {
+        target: 'https://image.nmb.best/image',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/image/, ''),
+      },
+      '/thumb': {
+        target: 'https://image.nmb.best/thumb',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/thumb/, ''),
+      },
+      '/post': {
+        target: 'https://www.nmbxd1.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/post/, ''),
+      },
+    },
+  },
 })
