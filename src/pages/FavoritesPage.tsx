@@ -17,7 +17,7 @@ export default function FavoritesPage() {
   const filtered = items
     .slice()
     .reverse()
-    .filter(i => !q || (i.title || '').toLowerCase().includes(q) || (i.preview || '').toLowerCase().includes(q) || (i.id || '').includes(q))
+    .filter(i => !q || String(i.title ?? '').toLowerCase().includes(q) || String(i.preview ?? '').toLowerCase().includes(q) || String(i.id ?? '').includes(q))
 
   const threads: ForumThread[] = filtered.map(i => ({
     id: i.id, fid: i.forumId, ReplyCount: String(i.lastReplyCount ?? i.replyCount), img: i.img, ext: i.ext,

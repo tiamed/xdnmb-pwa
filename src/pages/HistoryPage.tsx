@@ -15,7 +15,7 @@ export default function HistoryPage() {
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const q = searchQuery.toLowerCase()
-  const filtered = items.filter(i => !q || (i.title || '').toLowerCase().includes(q) || (i.preview || '').toLowerCase().includes(q) || (i.id || '').includes(q) || (i.forumName || '').toLowerCase().includes(q))
+  const filtered = items.filter(i => !q || String(i.title ?? '').toLowerCase().includes(q) || String(i.preview ?? '').toLowerCase().includes(q) || String(i.id ?? '').includes(q) || String(i.forumName ?? '').toLowerCase().includes(q))
 
   const closeSearch = () => {
     setSp({})
@@ -35,7 +35,7 @@ export default function HistoryPage() {
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md px-3 py-2 border-b border-divider">
           <div className="flex items-center gap-2">
             <SearchIcon size={16} className="text-muted shrink-0" />
-            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="搜索历史…" autoFocus
+            <input value={searchQuery} onChange={e => { const v = e.target.value; setSearchQuery(v) }} placeholder="搜索历史…" autoFocus
               className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted focus:outline-none border-none" />
             <button onClick={closeSearch} className="text-muted hover:text-foreground p-1"><X size={16} /></button>
           </div>
