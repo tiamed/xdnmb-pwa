@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Reply, ImageOff, X, ZoomIn } from 'lucide-react'
-import { Chip } from '@heroui/react'
+import { Chip, Modal, Button } from '@heroui/react'
 import { getImageUrl } from '../api/client'
 import { useSettingsStore } from '../store/settings'
 import { formatTime } from '../hooks/useUtils'
@@ -23,6 +23,7 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
   const [viewerOpen, setViewerOpen] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [pos, setPos] = useState({ x: 0, y: 0 })
+  const [actionSheetOpen, setActionSheetOpen] = useState(false)
   const touchRef = useRef<{ x: number; y: number; dist: number; zoom: number; px: number; py: number } | null>(null)
 
   const hasImage = post.img && post.ext
@@ -38,6 +39,12 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
     if (t.classList.contains('spoiler')) { t.classList.toggle('revealed') }
   }
 
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const t = e.target as HTMLElement
+    if (t.closest('button, a, img, .quote-link, .spoiler')) return
+    setActionSheetOpen(true)
+  }
+
   const renderHTML = () => {
     let html = post.content
     html = html.replace(/&gt;&gt;No\.(\d+)/g, '<span class="quote-link" data-pid="$1">&gt;&gt;No.$1</span>')
@@ -47,7 +54,8 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
 
   return (
     <>
-      <div className={`px-3 py-2.5 border-b border-divider active:bg-default-50 transition-colors duration-150 ${isTip ? 'bg-warning-50/50 dark:bg-warning-900/10' : ''} ${isPoMain && !isTip ? 'bg-accent-50/30 dark:bg-accent-900/5' : ''}`}>
+      <div className={`px-3 py-2.5 border-b border-divider active:bg-default-50 transition-colors duration-150 cursor-pointer ${isTip ? 'bg-warning-50/50 dark:bg-warning-900/10' : ''} ${isPoMain && !isTip ? 'bg-accent-50/30 dark:bg-accent-900/5' : ''}`}
+        onClick={handleCardClick}>
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-1 text-xs mb-1">
           <div className="flex items-center gap-1.5 flex-wrap min-w-0">
@@ -101,14 +109,26 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
         <div className="text-sm leading-relaxed break-words text-foreground/80 [overflow-wrap:anywhere]" style={{ fontSize: `${fontSize}px` }}
           onClick={handleContentClick} dangerouslySetInnerHTML={renderHTML()} />
 
-        {/* Actions */}
-        {showReply && !isTip && (
-          <button onClick={() => onReply?.(post.id)}
-            className="mt-1.5 flex items-center gap-1 text-xs text-muted hover:text-accent transition-colors btn-active">
-            <Reply size={12} /> 回复
-          </button>
-        )}
       </div>
+
+      {/* Action Sheet */}
+      {showReply && !isTip && (
+        <Modal>
+          <Modal.Backdrop isOpen={actionSheetOpen} onOpenChange={setActionSheetOpen}>
+            <Modal.Container placement="bottom">
+              <Modal.Dialog>
+                <Modal.Body className="px-3 py-4">
+                  <Button variant="tertiary" fullWidth size="lg" onPress={() => { onReply?.(post.id); setActionSheetOpen(false) }}
+                    className="flex items-center justify-center gap-2">
+                    <Reply size={16} />
+                    回复
+                  </Button>
+                </Modal.Body>
+              </Modal.Dialog>
+            </Modal.Container>
+          </Modal.Backdrop>
+        </Modal>
+      )}
 
       {/* Image Viewer */}
       {viewerOpen && (
