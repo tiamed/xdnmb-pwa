@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, FileText } from 'lucide-react'
+import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, List } from 'lucide-react'
 import { Button } from '@heroui/react'
 import { useForumList, useTimelineList } from '../hooks/useApi'
 import { useThreadViewStore } from '../store/threadView'
@@ -83,7 +83,7 @@ export default function NavBar() {
             <div className="relative">
               <button ref={pageBtnRef} onClick={() => { setPageOpen(p => !p); setPageInput(String(currentPage)) }}
                 className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] text-muted hover:bg-default-100 transition-colors">
-                <FileText size={12} />
+                <List size={12} />
                 <span className="tabular-nums">{currentPage}/{totalPages}</span>
               </button>
               {pageOpen && (

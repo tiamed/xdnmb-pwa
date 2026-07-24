@@ -136,7 +136,8 @@ export default function ThreadViewPage() {
           {virtualItems.map(virtualItem => {
             const reply = displayed[virtualItem.index]
             return (
-              <div key={reply.id} data-pid={reply.id}
+              <div key={virtualItem.key} data-index={virtualItem.index} data-pid={reply.id}
+                ref={virtualizer.measureElement}
                 style={{
                   position: 'absolute',
                   top: 0,
