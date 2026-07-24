@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Star, MessageSquare, ChevronRight, X } from 'lucide-react'
 import { Chip } from '@heroui/react'
 import { getImageUrl } from '../api/client'
@@ -17,6 +17,17 @@ export default function ThreadCard({ thread, forumName, onOpen }: Props) {
   const [zoom, setZoom] = useState(1)
   const [pos, setPos] = useState({ x: 0, y: 0 })
   const touchRef = useRef<{ x: number; y: number; dist: number; zoom: number; px: number; py: number } | null>(null)
+  const wheelRef = useRef<HTMLImageElement>(null)
+  useEffect(() => {
+    const el = wheelRef.current
+    if (!el) return
+    const handler = (e: WheelEvent) => {
+      e.preventDefault()
+      setZoom(z => Math.max(0.5, Math.min(10, z - e.deltaY * 0.005)))
+    }
+    el.addEventListener('wheel', handler, { passive: false })
+    return () => el.removeEventListener('wheel', handler)
+  }, [])
   const fav = isFavorite(thread.id)
   const preview = stripHtml(thread.content)
   const hasImage = thread.img && thread.ext
@@ -87,10 +98,9 @@ export default function ThreadCard({ thread, forumName, onOpen }: Props) {
             <X size={20} />
           </button>
           <div onClick={e => e.stopPropagation()} className="w-screen h-screen overflow-hidden select-none flex items-center justify-center">
-            <img src={getImageUrl(thread.img, thread.ext)} alt=""
+            <img ref={wheelRef} src={getImageUrl(thread.img, thread.ext)} alt=""
               className="max-w-full max-h-full object-contain cursor-grab active:cursor-grabbing"
               style={{ transform: `scale(${zoom}) translate(${pos.x / zoom}px, ${pos.y / zoom}px)` }}
-              onWheel={e => { e.preventDefault(); setZoom(z => Math.max(0.5, Math.min(10, z - e.deltaY * 0.005))) }}
               onMouseDown={e => {
                 if (e.button !== 0) return
                 const sx = e.clientX - pos.x, sy = e.clientY - pos.y
