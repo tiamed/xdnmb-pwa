@@ -1,9 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Settings, ArrowLeft, Eye, ArrowUpDown, Reply, Trash2 } from 'lucide-react'
+import { ArrowLeft, Eye, ArrowUpDown, Reply, Trash2, PencilLine } from 'lucide-react'
 import { Button } from '@heroui/react'
 import { useForumList, useTimelineList } from '../hooks/useApi'
 import { useSettingsStore } from '../store/settings'
 import { useThreadViewStore } from '../store/threadView'
+import { useForumViewStore } from '../store/forumView'
 import { useFavoritesStore } from '../store/favorites'
 import { useHistoryStore } from '../store/history'
 
@@ -74,15 +75,22 @@ export default function NavBar() {
           </div>
         )}
 
+        {/* forum (board) page toolbar */}
+        {loc.pathname.startsWith('/f/') && (
+          <div className="flex items-center gap-0.5 ml-2">
+            <button onClick={() => useForumViewStore.getState().setCreateThreadOpen(true)}
+              className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] text-accent font-medium hover:bg-accent-50 dark:hover:bg-accent-900/20">
+              <PencilLine size={12} />发新串
+            </button>
+          </div>
+        )}
+
         <div className="flex-1" />
         {loc.pathname.startsWith('/history') && historyCount > 0 && (
           <Button isIconOnly variant="ghost" size="sm" onPress={() => { if (confirm('清空所有历史？')) clearHistory() }} aria-label="清空历史">
             <Trash2 size={18} />
           </Button>
         )}
-        <Button isIconOnly variant="ghost" size="sm" onPress={() => nav('/settings')} aria-label="设置">
-          <Settings size={18} />
-        </Button>
       </div>
     </header>
   )

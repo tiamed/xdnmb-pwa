@@ -137,7 +137,13 @@ export function useSearch(keyword: string) {
 }
 
 // 发新串
-export function usePostThread() { return useMutation({ mutationFn: apiPostThread }) }
+export function usePostThread() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: apiPostThread,
+    onSuccess: (_, { fid }) => { qc.invalidateQueries({ queryKey: ['forumThreads', fid] }) },
+  })
+}
 
 // 回复
 export function useReplyThread() {
