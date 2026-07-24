@@ -142,9 +142,9 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
           <div className="text-white/60 text-xs absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/40 rounded-full px-3 py-1 pointer-events-none">
             滚轮缩放 · 拖拽移动 · 双击复原
           </div>
-          <div onClick={e => e.stopPropagation()} className="max-w-[90vw] max-h-[85vh] overflow-hidden select-none">
+          <div onClick={e => e.stopPropagation()} className="w-screen h-screen overflow-hidden select-none flex items-center justify-center">
             <img src={getImageUrl(post.img, post.ext)} alt=""
-              className="max-w-[90vw] max-h-[85vh] object-contain cursor-grab active:cursor-grabbing"
+              className="max-w-full max-h-full object-contain cursor-grab active:cursor-grabbing"
               style={{ transform: `scale(${zoom}) translate(${pos.x / zoom}px, ${pos.y / zoom}px)` }}
               onWheel={e => { e.preventDefault(); setZoom(z => Math.max(0.5, Math.min(5, z - e.deltaY * 0.005))) }}
               onMouseDown={e => {

@@ -88,9 +88,9 @@ export default function ThreadCard({ thread, forumName }: Props) {
           <button onClick={() => setViewerOpen(false)} className="absolute top-4 right-4 z-10 p-2 bg-black/40 rounded-full text-white hover:bg-black/60 transition-colors">
             <X size={20} />
           </button>
-          <div onClick={e => e.stopPropagation()} className="max-w-[90vw] max-h-[85vh] overflow-hidden select-none">
+          <div onClick={e => e.stopPropagation()} className="w-screen h-screen overflow-hidden select-none flex items-center justify-center">
             <img src={getImageUrl(thread.img, thread.ext)} alt=""
-              className="max-w-[90vw] max-h-[85vh] object-contain cursor-grab active:cursor-grabbing"
+              className="max-w-full max-h-full object-contain cursor-grab active:cursor-grabbing"
               style={{ transform: `scale(${zoom}) translate(${pos.x / zoom}px, ${pos.y / zoom}px)` }}
               onWheel={e => { e.preventDefault(); setZoom(z => Math.max(0.5, Math.min(5, z - e.deltaY * 0.005))) }}
               onMouseDown={e => {
