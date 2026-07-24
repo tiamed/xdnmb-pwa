@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Reply, ImageOff, X, ZoomIn } from 'lucide-react'
 import { Chip } from '@heroui/react'
 import { getImageUrl } from '../api/client'
@@ -25,18 +25,7 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
   const [pos, setPos] = useState({ x: 0, y: 0 })
   const [actionSheetOpen, setActionSheetOpen] = useState(false)
   const touchRef = useRef<{ x: number; y: number; dist: number; zoom: number; px: number; py: number } | null>(null)
-  const wheelRef = useRef<HTMLImageElement>(null)
   const dragMoved = useRef(false)
-  useEffect(() => {
-    const el = wheelRef.current
-    if (!el) return
-    const handler = (e: WheelEvent) => {
-      e.preventDefault()
-      setZoom(z => Math.max(0.5, Math.min(10, z - e.deltaY * 0.005)))
-    }
-    el.addEventListener('wheel', handler, { passive: false })
-    return () => el.removeEventListener('wheel', handler)
-  }, [viewerOpen])
 
   const hasImage = post.img && post.ext
   const isPoMain = isPo || post.user_hash === poHash
@@ -156,9 +145,10 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
             滚轮缩放 · 拖拽移动 · 单击关闭
           </div>
           <div onClick={e => e.stopPropagation()} className="w-screen h-screen overflow-hidden select-none flex items-center justify-center">
-            <img ref={wheelRef} src={getImageUrl(post.img, post.ext)} alt=""
+            <img src={getImageUrl(post.img, post.ext)} alt=""
               className="max-w-full max-h-full object-contain cursor-grab active:cursor-grabbing"
               style={{ transform: `scale(${zoom}) translate(${pos.x / zoom}px, ${pos.y / zoom}px)` }}
+              onWheel={e => setZoom(z => Math.max(0.5, Math.min(10, z - e.deltaY * 0.005)))}
               onMouseDown={e => {
                 if (e.button !== 0) return
                 dragMoved.current = false
@@ -179,7 +169,6 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
               onTouchMove={e => {
                 const cur = touchRef.current
                 if (!cur) return
-                e.preventDefault()
                 if (e.touches.length === 1) {
                   const dx = e.touches[0].clientX - cur.x
                   const dy = e.touches[0].clientY - cur.y
