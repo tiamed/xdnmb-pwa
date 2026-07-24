@@ -67,7 +67,7 @@ export default function ThreadViewPage() {
 
   return (
     <div className="min-h-full page-enter pb-14">
-      <div className="sticky top-[49px] z-30 bg-background/90 backdrop-blur-md border-b border-divider px-3 py-1.5 flex items-center justify-between text-xs">
+      <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-divider px-3 py-1.5 flex items-center justify-between text-xs">
         <div className="flex items-center gap-1">
           <button onClick={() => setPoOnly(!poOnly)}
             className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-all ${poOnly ? 'bg-accent text-accent-foreground' : 'text-muted hover:bg-default-100'}`}>
