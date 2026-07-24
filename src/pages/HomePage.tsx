@@ -4,7 +4,7 @@ import { useForumList, useTimelineList } from '../hooks/useApi'
 import ForumList from '../components/ForumList'
 import { useSettingsStore } from '../store/settings'
 import { updateUrls } from '../api/client'
-import { Menu, Clock } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { Skeleton } from '@heroui/react'
 
 export default function HomePage() {
@@ -65,9 +65,8 @@ export default function HomePage() {
               <div className="grid grid-cols-3 gap-2">
                 {timelines.map(t => (
                   <button key={t.id} onClick={() => goTimeline(t.id)}
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-default-100 hover:bg-default-200 dark:bg-default-50 dark:hover:bg-default-100 transition-all active:scale-95 border border-transparent hover:border-accent/20">
-                    <Clock size={22} className="text-accent" />
-                    <span className="text-xs text-default-600 font-medium truncate w-full text-center">{t.display_name || t.name}</span>
+                    className="flex items-center justify-center p-3 rounded-xl bg-default-100 hover:bg-default-200 dark:bg-default-50 dark:hover:bg-default-100 transition-all active:scale-95 border border-transparent hover:border-accent/20">
+                    <span className="text-xs text-default-600 font-medium truncate">{t.display_name || t.name}</span>
                   </button>
                 ))}
               </div>

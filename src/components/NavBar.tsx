@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Settings, ArrowLeft, Eye, ArrowUpDown, Reply, Trash2 } from 'lucide-react'
 import { Button } from '@heroui/react'
-import { useForumList } from '../hooks/useApi'
+import { useForumList, useTimelineList } from '../hooks/useApi'
 import { useSettingsStore } from '../store/settings'
 import { useThreadViewStore } from '../store/threadView'
 import { useFavoritesStore } from '../store/favorites'
@@ -14,6 +14,7 @@ export default function NavBar() {
   const poOnly = loc.search.includes('po=1')
   const { replySort, setReplySort } = useSettingsStore()
   const { data: forumGroups } = useForumList()
+  const { data: timelines } = useTimelineList()
   const favCount = useFavoritesStore(s => s.items.length)
   const historyCount = useHistoryStore(s => s.items.length)
   const clearHistory = useHistoryStore(s => s.clearHistory)
@@ -24,10 +25,17 @@ export default function NavBar() {
   let forumName = ''
   if (forumGroups) for (const g of forumGroups) { const f = g.forums.find(f => f.id === forumId); if (f) { forumName = f.name; break } }
 
+  const timelineId = loc.pathname.startsWith('/timeline/') ? loc.pathname.split('/')[2] : ''
+  let timelineName = ''
+  if (timelines) {
+    const t = timelines.find(tl => String(tl.id) === timelineId)
+    if (t) timelineName = t.display_name || t.name
+  }
+
   const title = (() => {
     if (isThread) return '串详情'
     if (loc.pathname.startsWith('/f/')) return forumName || `版块 ${forumId}`
-    if (loc.pathname.startsWith('/timeline/')) return '时间线'
+    if (loc.pathname.startsWith('/timeline/')) return timelineName || '时间线'
     if (loc.pathname.startsWith('/favorites')) return `收藏 (${favCount})`
     if (loc.pathname.startsWith('/history')) return `历史 (${historyCount})`
     if (loc.pathname.startsWith('/settings')) return '设置'

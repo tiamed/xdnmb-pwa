@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useForumList } from '../hooks/useApi'
+import { useForumList, useTimelineList } from '../hooks/useApi'
 import type { Forum } from '../types/api'
 import { ChevronDown, ChevronRight, Clock } from 'lucide-react'
 
@@ -11,6 +11,7 @@ interface ForumListProps {
 export default function ForumList({ onSelect }: ForumListProps) {
   const navigate = useNavigate()
   const { data: forumGroups, isLoading } = useForumList()
+  const { data: timelines } = useTimelineList()
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const toggle = (id: string) => {
@@ -26,7 +27,7 @@ export default function ForumList({ onSelect }: ForumListProps) {
     onSelect?.()
   }
 
-  const handleTimeline = (id: string) => {
+  const handleTimeline = (id: number | string) => {
     navigate(`/timeline/${id}`)
     onSelect?.()
   }
@@ -35,19 +36,8 @@ export default function ForumList({ onSelect }: ForumListProps) {
     return <div className="p-4 text-center text-sm text-default-400">加载中...</div>
   }
 
-  const timelines: { id: string; name: string }[] = []
-  if (forumGroups) {
-    for (const g of forumGroups) {
-      for (const f of g.forums) {
-        if (Number(f.id) < 0 && !timelines.find(t => t.id === f.id)) {
-          timelines.push({ id: f.id, name: f.name })
-        }
-      }
-    }
-  }
   const groups = forumGroups || []
-
-  const hasTimelines = timelines.length > 0
+  const hasTimelines = (timelines?.length ?? 0) > 0
 
   return (
     <div className="py-1 text-sm">
@@ -57,10 +47,10 @@ export default function ForumList({ onSelect }: ForumListProps) {
           <div className="flex items-center gap-1.5 mb-1 text-xs font-semibold text-default-400 uppercase tracking-wider">
             <Clock size={12} /> 时间线
           </div>
-          {timelines.map(tl => (
+          {timelines!.map(tl => (
             <button key={tl.id} onClick={() => handleTimeline(tl.id)}
               className="w-full text-left px-2 py-1.5 rounded-lg text-default-600 hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/20 transition-colors">
-              {tl.name}
+              {tl.display_name || tl.name}
             </button>
           ))}
         </div>
