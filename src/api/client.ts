@@ -7,6 +7,7 @@ import type {
   CdnInfo,
   Timeline,
 } from '../types/api'
+import { getActiveUserHash } from '../store/settings'
 
 const API_BASE = '/api/'
 const MAIN_POST = '/post/'
@@ -54,12 +55,13 @@ export async function updateUrls(): Promise<void> {
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${apiBase}${path}`
 
-  const userHash = localStorage.getItem('nmb_userhash')
+  const userHash = getActiveUserHash()
   const headers: Record<string, string> = {
     ...(init?.headers as Record<string, string>),
   }
   if (userHash) {
-    headers['Cookie'] = `userhash=${userHash}`
+    // 浏览器禁止 fetch 设置 Cookie 头，改用自定义头，由代理层翻译为上游 Cookie
+    headers['X-Userhash'] = userHash
   }
 
   const res = await fetch(url, {
@@ -158,9 +160,17 @@ export async function postThread(params: {
   if (params.image) formData.append('image', params.image)
   if (params.watermark) formData.append('water', 'true')
 
+  const userHash = getActiveUserHash()
+  const headers: Record<string, string> = {}
+  if (userHash) {
+    headers['X-Userhash'] = userHash
+    formData.append('hash', userHash)
+  }
+
   const res = await fetch(`${mainPost}Home/Forum/doPostThread.html`, {
     method: 'POST',
     body: formData,
+    headers,
     credentials: 'same-origin',
   })
 
@@ -193,9 +203,17 @@ export async function replyThread(params: {
   if (params.image) formData.append('image', params.image)
   if (params.watermark) formData.append('water', 'true')
 
+  const userHash = getActiveUserHash()
+  const headers: Record<string, string> = {}
+  if (userHash) {
+    headers['X-Userhash'] = userHash
+    formData.append('hash', userHash)
+  }
+
   const res = await fetch(`${mainPost}Home/Forum/doReplyThread.html`, {
     method: 'POST',
     body: formData,
+    headers,
     credentials: 'same-origin',
   })
 
