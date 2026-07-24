@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSettingsStore, type ThemeMode, type ImageMode, type ReplySort } from '../store/settings'
-import { setUseBackup, isUseBackup } from '../api/client'
+import { getApiBaseUrl, setApiBase } from '../api/client'
 
 export default function SettingsPage() {
   const {
@@ -20,14 +20,12 @@ export default function SettingsPage() {
     setUserHash,
   } = useSettingsStore()
 
-  const [backupEnabled, setBackupEnabled] = useState(isUseBackup())
+  const [apiUrl, setApiUrl] = useState(getApiBaseUrl())
   const [hashInput, setHashInput] = useState(userHash)
   const [uuidInput, setUuidInput] = useState(feedUuid)
 
-  const toggleBackup = () => {
-    const newVal = !backupEnabled
-    setBackupEnabled(newVal)
-    setUseBackup(newVal)
+  const handleSaveApiUrl = () => {
+    setApiBase(apiUrl)
   }
 
   return (
@@ -94,8 +92,21 @@ export default function SettingsPage() {
 
       {/* 网络设置 */}
       <Section title="网络">
-        <Row label="使用备用API">
-          <Toggle checked={backupEnabled} onChange={toggleBackup} />
+        <Row label="API 地址">
+          <div className="flex-1 flex gap-2">
+            <input
+              type="text"
+              value={apiUrl}
+              onChange={(e) => setApiUrl(e.target.value)}
+              className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono"
+            />
+            <button
+              onClick={handleSaveApiUrl}
+              className="px-3 py-1.5 text-sm bg-purple-500 text-white rounded hover:bg-purple-600"
+            >
+              保存
+            </button>
+          </div>
         </Row>
       </Section>
 
