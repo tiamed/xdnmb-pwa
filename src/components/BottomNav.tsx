@@ -17,10 +17,9 @@ export default function BottomNav({ activeTab }: { activeTab: string }) {
           const active = activeTab === id
           return (
             <button key={id} onClick={() => navigate(path)}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 h-full transition-colors relative ${
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 h-full transition-colors ${
                 active ? 'text-accent' : 'text-default-400 hover:text-default-600'
               }`}>
-              {active && <span className="absolute top-0 left-1/4 right-1/4 h-0.5 rounded-full bg-accent" />}
               <Icon size={20} strokeWidth={active ? 2.5 : 1.5} />
               <span className="text-[10px] font-medium">{label}</span>
             </button>
