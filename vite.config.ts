@@ -40,6 +40,15 @@ export default defineConfig({
         target: 'https://api.nmb.best/api',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            const h = req.headers['x-userhash']
+            if (typeof h === 'string' && h) {
+              proxyReq.setHeader('Cookie', `userhash=${h}`)
+              proxyReq.removeHeader('x-userhash')
+            }
+          })
+        },
       },
       '/image': {
         target: 'https://image.nmb.best/image',
@@ -55,6 +64,15 @@ export default defineConfig({
         target: 'https://www.nmbxd1.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/post/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            const h = req.headers['x-userhash']
+            if (typeof h === 'string' && h) {
+              proxyReq.setHeader('Cookie', `userhash=${h}`)
+              proxyReq.removeHeader('x-userhash')
+            }
+          })
+        },
       },
     },
   },

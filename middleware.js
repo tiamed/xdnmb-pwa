@@ -46,6 +46,12 @@ export default async function handler(request) {
       body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
     }
 
+    const userhash = request.headers.get('x-userhash')
+    if (userhash) {
+      headers.set('Cookie', `userhash=${userhash}`)
+      headers.delete('x-userhash')
+    }
+
     const upstreamRes = await fetch(upstream, init)
 
     const responseHeaders = new Headers(upstreamRes.headers)
