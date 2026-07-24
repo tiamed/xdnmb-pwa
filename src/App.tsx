@@ -31,7 +31,7 @@ function App() {
   const showBottomNav = !location.pathname.startsWith('/t/')
 
   return (
-    <div className="h-dvh flex flex-col">
+    <div className="h-dvh flex flex-col overflow-hidden">
       <NavBar />
       <main ref={mainRef} className="flex-1 min-h-0 overflow-y-auto scrollbar-none pb-[52px]">
         <Routes>
