@@ -25,7 +25,7 @@ export default function ThreadCard({ thread, forumName }: Props) {
   return (
     <>
       <div onClick={() => nav(`/t/${thread.id}`)}
-        className="px-3 py-2.5 border-b border-divider cursor-pointer hover:bg-default-50 active:bg-default-100 transition-colors duration-150">
+        className="px-3 py-2.5 border-b border-divider cursor-pointer hover:bg-default-50 active:bg-default-100 active:scale-[0.99] transition-all duration-150 origin-left">
         <div className="flex gap-2.5">
           {hasImage && imageMode !== 'hidden' && (
             <div onClick={e => { e.stopPropagation(); setViewerOpen(true) }}

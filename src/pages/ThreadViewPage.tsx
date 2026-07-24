@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Star, ArrowUpDown, Eye, Reply } from 'lucide-react'
 import { Button } from '@heroui/react'
-import { useThread, useReplyThread } from '../hooks/useApi'
+import { useInfiniteThread, useReplyThread } from '../hooks/useApi'
 import PostItem from '../components/PostItem'
 import { ListSkeleton } from '../components/Skeleton'
 import { useSettingsStore } from '../store/settings'
@@ -14,44 +14,37 @@ import type { Post } from '../types/api'
 export default function ThreadViewPage() {
   const { id: rawId } = useParams<{ id: string }>()
   const tid = rawId || ''
-  const [page, setPage] = useState(1)
   const [poOnly, setPoOnly] = useState(false)
   const [replyOpen, setReplyOpen] = useState(false)
   const [replyContent, setReplyContent] = useState('')
   const [replyTo, setReplyTo] = useState<string | null>(null)
-  const [allReplies, setAllReplies] = useState<Post[]>([])
   const { replySort, autoLoadNext } = useSettingsStore()
   const { addFavorite, removeFavorite, isFavorite, updateReplyCount } = useFavoritesStore()
   const { addHistory } = useHistoryStore()
   const replyMutation = useReplyThread()
 
-  const { data: thread, isLoading, error, refetch } = useThread(tid, page)
-
-  useEffect(() => {
-    if (!thread) return
-    if (page === 1) setAllReplies(thread.Replies || [])
-    else setAllReplies(p => [...p, ...(thread.Replies || [])])
-  }, [thread, page])
-  useEffect(() => { setPage(1); setAllReplies([]) }, [tid])
-
-  useEffect(() => {
-    if (thread && page === 1) {
-      addHistory({ id: thread.id, title: thread.title || '无标题', forumName: '', forumId: thread.fid || '', preview: truncateText(stripHtml(thread.content), 100), img: thread.img, ext: thread.ext, replyCount: Number(thread.ReplyCount || 0), visitedAt: Date.now() })
-      updateReplyCount(thread.id, Number(thread.ReplyCount || 0))
-    }
-  }, [thread])
-
-  const poHash = thread?.user_hash
+  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error, refetch } = useInfiniteThread(tid)
+  const thread = data?.pages[0]
   const total = Number(thread?.ReplyCount || 0)
+  const allReplies = data?.pages.flatMap(p => p.Replies || []) ?? []
   const isFav = isFavorite(tid)
+  const poHash = thread?.user_hash
 
-  const loadMore = () => { if (!isLoading && allReplies.length < total) setPage(p => p + 1) }
+  // save history on first load
   useEffect(() => {
-    if (!autoLoadNext) return
-    const h = () => { if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 300) loadMore() }
+    if (thread) {
+      addHistory({ id: thread.id, title: thread.title || '无标题', forumName: '', forumId: thread.fid || '', preview: truncateText(stripHtml(thread.content), 100), img: thread.img, ext: thread.ext, replyCount: total, visitedAt: Date.now() })
+      updateReplyCount(thread.id, total)
+    }
+  }, [!!thread])
+
+  // infinite scroll
+  useEffect(() => {
+    if (!autoLoadNext || !hasNextPage || isFetchingNextPage) return
+    const h = () => { if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 300) fetchNextPage() }
     window.addEventListener('scroll', h, { passive: true })
     return () => window.removeEventListener('scroll', h)
-  }, [autoLoadNext, isLoading, allReplies.length, total])
+  }, [autoLoadNext, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const handleQuote = (pid: string) => {
     const el = document.querySelector(`[data-pid="${pid}"]`) as HTMLElement
@@ -74,7 +67,6 @@ export default function ThreadViewPage() {
 
   return (
     <div className="min-h-full page-enter pb-14">
-      {/* Toolbar */}
       <div className="sticky top-[49px] z-30 bg-background/90 backdrop-blur-md border-b border-divider px-3 py-1.5 flex items-center justify-between text-xs">
         <div className="flex items-center gap-1">
           <button onClick={() => setPoOnly(!poOnly)}
@@ -90,7 +82,7 @@ export default function ThreadViewPage() {
           <span className="text-muted">{displayed.length}/{total}</span>
           <button onClick={() => { if (!thread) return; isFav ? removeFavorite(thread.id) : addFavorite({
             id: thread.id, title: thread.title || '无标题', forumName: '', forumId: thread.fid || '',
-            preview: truncateText(stripHtml(thread.content), 100), img: thread.img, ext: thread.ext, replyCount: Number(thread.ReplyCount || 0)
+            preview: truncateText(stripHtml(thread.content), 100), img: thread.img, ext: thread.ext, replyCount: total
           }) }}
             className={`flex items-center gap-1 px-2 py-1.5 rounded-lg ${isFav ? 'text-warning bg-warning-50 dark:bg-warning-900/20' : 'text-muted hover:bg-default-100'}`}>
             <Star size={14} fill={isFav ? 'currentColor' : 'none'} />收藏
@@ -102,13 +94,10 @@ export default function ThreadViewPage() {
       <div className="border-t-2 border-default-200 dark:border-default-700">
         {displayed.map(r => <div key={r.id} data-pid={r.id}><PostItem post={r} poHash={poHash} onQuoteClick={handleQuote} onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} /></div>)}
         <div className="p-4 text-center text-sm text-muted">
-          {isLoading && page > 1 ? '加载中…' : !autoLoadNext && displayed.length < total ?
-            <button onClick={loadMore} className="text-accent hover:underline">加载更多</button> :
-            total > 0 ? '— 共 ' + total + ' 条回复 —' : null}
+          {isFetchingNextPage ? '加载中…' : !hasNextPage && total > 0 ? `— 共 ${total} 条回复 —` : null}
         </div>
       </div>
 
-      {/* Reply */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-divider px-2 py-1.5 z-30" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {replyOpen ? (
           <div className="space-y-2">

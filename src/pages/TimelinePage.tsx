@@ -1,33 +1,25 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useTimelineThreads } from '../hooks/useApi'
+import { useInfiniteTimelineThreads } from '../hooks/useApi'
 import ThreadCard from '../components/ThreadCard'
 import { ListSkeleton } from '../components/Skeleton'
 import { useSettingsStore } from '../store/settings'
-import type { ForumThread } from '../types/api'
 
 export default function TimelinePage() {
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
   const tlId = id || ''
-  const [page, setPage] = useState(1)
-  const [all, setAll] = useState<ForumThread[]>([])
   const { autoLoadNext } = useSettingsStore()
-  const { data: threads, isLoading, error } = useTimelineThreads(tlId, page)
+
+  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error } = useInfiniteTimelineThreads(tlId)
+  const threads = data?.pages.flat() ?? []
 
   useEffect(() => {
-    if (threads && page === 1) setAll(threads)
-    else if (threads && page > 1) setAll(p => [...p, ...threads])
-  }, [threads, page])
-  useEffect(() => { setPage(1); setAll([]) }, [tlId])
-
-  const loadMore = () => { if (!isLoading && threads?.length) setPage(p => p + 1) }
-  useEffect(() => {
-    if (!autoLoadNext) return
-    const h = () => { if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 200) loadMore() }
+    if (!autoLoadNext || !hasNextPage || isFetchingNextPage) return
+    const h = () => { if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 200) fetchNextPage() }
     window.addEventListener('scroll', h, { passive: true })
     return () => window.removeEventListener('scroll', h)
-  }, [autoLoadNext, isLoading, threads])
+  }, [autoLoadNext, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   if (error) return <div className="py-20 text-center text-danger text-sm">加载失败</div>
 
@@ -36,11 +28,11 @@ export default function TimelinePage() {
       <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-divider px-3 py-2.5">
         <h2 className="text-base font-semibold text-foreground">时间线</h2>
       </div>
-      {isLoading && all.length === 0 ? <ListSkeleton count={6} /> : (
+      {isLoading ? <ListSkeleton count={6} /> : (
         <div>
-          {all.map(thread => <div key={thread.id} onClick={() => nav(`/t/${thread.id}`)}><ThreadCard thread={thread} /></div>)}
+          {threads.map(thread => <div key={thread.id} onClick={() => nav(`/t/${thread.id}`)}><ThreadCard thread={thread} /></div>)}
           <div className="p-4 text-center text-sm text-muted">
-            {isLoading && page > 1 ? '加载中…' : threads?.length === 0 && all.length > 0 ? '— 没有更多了 —' : null}
+            {isFetchingNextPage ? '加载中…' : !hasNextPage && threads.length > 0 ? '— 没有更多了 —' : null}
           </div>
         </div>
       )}

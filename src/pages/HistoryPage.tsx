@@ -17,7 +17,7 @@ export default function HistoryPage() {
         <div className="py-20 text-center text-muted"><Clock size={40} className="mx-auto mb-3 opacity-40" /><p>还没有浏览记录</p></div>
       ) : (
         <div>{items.map(item => (
-          <div key={item.id} onClick={() => nav(`/t/${item.id}`)} className="px-3 py-2.5 border-b border-divider cursor-pointer hover:bg-default-50 transition-colors">
+          <div key={item.id} onClick={() => nav(`/t/${item.id}`)} className="px-3 py-2.5 border-b border-divider cursor-pointer hover:bg-default-50 active:bg-default-100 active:scale-[0.99] transition-all duration-150 origin-left">
             <h3 className="font-medium text-foreground truncate text-sm">{item.title}</h3>
             <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted">
               <span className="text-accent font-mono">No.{item.id}</span>

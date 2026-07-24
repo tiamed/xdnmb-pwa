@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getForumList,
   getTimelineList,
@@ -20,7 +20,7 @@ export function useForumList() {
   return useQuery({
     queryKey: ['forumList'],
     queryFn: getForumList,
-    staleTime: 1000 * 60 * 60, // 1小时缓存
+    staleTime: 1000 * 60 * 60,
   })
 }
 
@@ -33,33 +33,45 @@ export function useTimelineList() {
   })
 }
 
-// 版块串列表
-export function useForumThreads(forumId: string, page = 1) {
-  return useQuery({
-    queryKey: ['forumThreads', forumId, page],
-    queryFn: () => getForumThreads(forumId, page),
-    staleTime: 1000 * 30, // 30秒
+// 版块串列表 - infinite
+export function useInfiniteForumThreads(forumId: string) {
+  return useInfiniteQuery({
+    queryKey: ['forumThreads', forumId],
+    queryFn: ({ pageParam }) => getForumThreads(forumId, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, _all, lastPageParam) =>
+      lastPage.length > 0 ? lastPageParam + 1 : undefined,
     enabled: !!forumId,
-  })
-}
-
-// 时间线串列表
-export function useTimelineThreads(timelineId: string, page = 1) {
-  return useQuery({
-    queryKey: ['timelineThreads', timelineId, page],
-    queryFn: () => getTimelineThreads(timelineId, page),
     staleTime: 1000 * 30,
-    enabled: !!timelineId,
   })
 }
 
-// 串详情
-export function useThread(threadId: string, page = 1) {
-  return useQuery({
-    queryKey: ['thread', threadId, page],
-    queryFn: () => getThread(threadId, page),
-    staleTime: 1000 * 15,
+// 时间线串列表 - infinite
+export function useInfiniteTimelineThreads(timelineId: string) {
+  return useInfiniteQuery({
+    queryKey: ['timelineThreads', timelineId],
+    queryFn: ({ pageParam }) => getTimelineThreads(timelineId, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, _all, lastPageParam) =>
+      lastPage.length > 0 ? lastPageParam + 1 : undefined,
+    enabled: !!timelineId,
+    staleTime: 1000 * 30,
+  })
+}
+
+// 串详情 - infinite replies
+export function useInfiniteThread(threadId: string) {
+  return useInfiniteQuery({
+    queryKey: ['thread', threadId],
+    queryFn: ({ pageParam }) => getThread(threadId, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, _all, lastPageParam) => {
+      const total = Number(lastPage?.ReplyCount || 0)
+      const loaded = (_all || []).reduce((s, p) => s + (p?.Replies?.length || 0), 0)
+      return loaded < total ? lastPageParam + 1 : undefined
+    },
     enabled: !!threadId,
+    staleTime: 1000 * 15,
   })
 }
 
@@ -95,25 +107,19 @@ export function useFeed(feedId: string, page = 1) {
 
 // 添加订阅
 export function useAddFeed() {
-  const queryClient = useQueryClient()
+  const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ feedId, threadId }: { feedId: string; threadId: string }) =>
-      apiAddFeed(feedId, threadId),
-    onSuccess: (_, { feedId }) => {
-      queryClient.invalidateQueries({ queryKey: ['feed', feedId] })
-    },
+    mutationFn: ({ feedId, threadId }: { feedId: string; threadId: string }) => apiAddFeed(feedId, threadId),
+    onSuccess: (_, { feedId }) => { qc.invalidateQueries({ queryKey: ['feed', feedId] }) },
   })
 }
 
 // 删除订阅
 export function useDelFeed() {
-  const queryClient = useQueryClient()
+  const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ feedId, threadId }: { feedId: string; threadId: string }) =>
-      apiDelFeed(feedId, threadId),
-    onSuccess: (_, { feedId }) => {
-      queryClient.invalidateQueries({ queryKey: ['feed', feedId] })
-    },
+    mutationFn: ({ feedId, threadId }: { feedId: string; threadId: string }) => apiDelFeed(feedId, threadId),
+    onSuccess: (_, { feedId }) => { qc.invalidateQueries({ queryKey: ['feed', feedId] }) },
   })
 }
 
@@ -128,19 +134,13 @@ export function useSearch(keyword: string) {
 }
 
 // 发新串
-export function usePostThread() {
-  return useMutation({
-    mutationFn: apiPostThread,
-  })
-}
+export function usePostThread() { return useMutation({ mutationFn: apiPostThread }) }
 
 // 回复
 export function useReplyThread() {
-  const queryClient = useQueryClient()
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: apiReplyThread,
-    onSuccess: (_, { resto }) => {
-      queryClient.invalidateQueries({ queryKey: ['thread', resto] })
-    },
+    onSuccess: (_, { resto }) => { qc.invalidateQueries({ queryKey: ['thread', resto] }) },
   })
 }
