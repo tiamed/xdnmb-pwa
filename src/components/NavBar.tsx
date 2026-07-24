@@ -1,20 +1,15 @@
-import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Sun, Moon, Monitor, Settings, ArrowLeft, Eye, ArrowUpDown, Reply } from 'lucide-react'
+import { Settings, ArrowLeft, Eye, ArrowUpDown, Reply } from 'lucide-react'
 import { Button } from '@heroui/react'
-import { useTheme } from 'next-themes'
 import { useSettingsStore } from '../store/settings'
 import { useThreadViewStore } from '../store/threadView'
 
 export default function NavBar() {
   const nav = useNavigate()
   const loc = useLocation()
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
   const isThread = loc.pathname.startsWith('/t/')
   const poOnly = loc.search.includes('po=1')
   const { replySort, setReplySort } = useSettingsStore()
-  useEffect(() => { setMounted(true) }, [])
 
   const isDetail = isThread || loc.pathname.startsWith('/f/') || loc.pathname.startsWith('/timeline/') || loc.pathname.startsWith('/favorites') || loc.pathname.startsWith('/history') || loc.pathname.startsWith('/settings')
 
@@ -27,8 +22,6 @@ export default function NavBar() {
     if (loc.pathname.startsWith('/settings')) return '设置'
     return ''
   })()
-
-  const ThemeIcon = !mounted ? Sun : theme === 'light' ? Sun : theme === 'dark' ? Moon : Monitor
 
   return (
     <header className="shrink-0 z-40 bg-background/90 backdrop-blur-md border-b border-divider">
@@ -63,13 +56,6 @@ export default function NavBar() {
         )}
 
         <div className="flex-1" />
-        <Button isIconOnly variant="ghost" size="sm" onPress={() => {
-          const modes = ['light', 'dark', 'system'] as const
-          const idx = modes.indexOf((theme || 'system') as typeof modes[number])
-          setTheme(modes[(idx + 1) % 3])
-        }} aria-label="主题">
-          <ThemeIcon size={18} />
-        </Button>
         <Button isIconOnly variant="ghost" size="sm" onPress={() => nav('/settings')} aria-label="设置">
           <Settings size={18} />
         </Button>
