@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  @apply bg-white text-gray-700 dark:bg-[#16171d] dark:text-gray-400;
+}
+
+/* 隐藏滚动条但保留滚动功能 */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 引用链接样式 */
+.quote-link {
+  @apply text-green-600 dark:text-green-400 cursor-pointer hover:underline;
+}
+
+/* 隐藏内容 [h]...[/h] */
+.spoiler {
+  @apply bg-gray-900 text-gray-900 dark:bg-black dark:text-black cursor-pointer select-none;
+}
+.spoiler:hover,
+.spoiler.revealed {
+  @apply text-gray-700 dark:text-gray-300;
+}
