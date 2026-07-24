@@ -1,24 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useForumList } from '../hooks/useApi'
+import { useForumList, useTimelineList } from '../hooks/useApi'
 import ForumList from '../components/ForumList'
 import { useSettingsStore } from '../store/settings'
 import { updateUrls } from '../api/client'
-import { Home, Palette, BookOpen, Code, Film, Laugh, Menu } from 'lucide-react'
+import { Menu, Clock } from 'lucide-react'
 import { Skeleton } from '@heroui/react'
-
-const quickForums = [
-  { id: '4', name: '综合版1', Icon: Home },
-  { id: '7', name: '欢乐恶搞', Icon: Laugh },
-  { id: '11', name: '绘画', Icon: Palette },
-  { id: '15', name: '故事', Icon: BookOpen },
-  { id: '25', name: '技术宅', Icon: Code },
-  { id: '36', name: '动画综合', Icon: Film },
-]
 
 export default function HomePage() {
   const nav = useNavigate()
   const { data: forumGroups, isLoading } = useForumList()
+  const { data: timelines } = useTimelineList()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => { updateUrls().catch(() => {}) }, [])
@@ -30,6 +22,7 @@ export default function HomePage() {
   }, [])
 
   const go = (id: string) => { nav(`/f/${id}`); setSidebarOpen(false) }
+  const goTimeline = (id: number | string) => { nav(`/timeline/${id}`); setSidebarOpen(false) }
 
   return (
     <div className="flex h-full">
@@ -63,16 +56,22 @@ export default function HomePage() {
           </div>
 
           <div className="mb-6">
-            <h2 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">热门版块</h2>
-            <div className="grid grid-cols-3 gap-2">
-              {quickForums.map(({ id, name, Icon }) => (
-                <button key={id} onClick={() => go(id)}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-default-100 hover:bg-default-200 dark:bg-default-50 dark:hover:bg-default-100 transition-all active:scale-95 border border-transparent hover:border-accent/20">
-                  <Icon size={22} className="text-accent" />
-                  <span className="text-xs text-default-600 font-medium truncate w-full text-center">{name}</span>
-                </button>
-              ))}
-            </div>
+            <h2 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">时间线</h2>
+            {!timelines ? (
+              <div className="grid grid-cols-3 gap-2">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}</div>
+            ) : timelines.length === 0 ? (
+              <p className="text-xs text-muted">暂无时间线</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {timelines.map(t => (
+                  <button key={t.id} onClick={() => goTimeline(t.id)}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-default-100 hover:bg-default-200 dark:bg-default-50 dark:hover:bg-default-100 transition-all active:scale-95 border border-transparent hover:border-accent/20">
+                    <Clock size={22} className="text-accent" />
+                    <span className="text-xs text-default-600 font-medium truncate w-full text-center">{t.display_name || t.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
