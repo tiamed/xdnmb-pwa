@@ -1,8 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Settings, ArrowLeft, Eye, ArrowUpDown, Reply } from 'lucide-react'
+import { Settings, ArrowLeft, Eye, ArrowUpDown, Reply, Trash2 } from 'lucide-react'
 import { Button } from '@heroui/react'
+import { useForumList } from '../hooks/useApi'
 import { useSettingsStore } from '../store/settings'
 import { useThreadViewStore } from '../store/threadView'
+import { useFavoritesStore } from '../store/favorites'
+import { useHistoryStore } from '../store/history'
 
 export default function NavBar() {
   const nav = useNavigate()
@@ -10,15 +13,23 @@ export default function NavBar() {
   const isThread = loc.pathname.startsWith('/t/')
   const poOnly = loc.search.includes('po=1')
   const { replySort, setReplySort } = useSettingsStore()
+  const { data: forumGroups } = useForumList()
+  const favCount = useFavoritesStore(s => s.items.length)
+  const historyCount = useHistoryStore(s => s.items.length)
+  const clearHistory = useHistoryStore(s => s.clearHistory)
 
   const isDetail = isThread || loc.pathname.startsWith('/f/') || loc.pathname.startsWith('/timeline/') || loc.pathname.startsWith('/favorites') || loc.pathname.startsWith('/history') || loc.pathname.startsWith('/settings')
 
+  const forumId = loc.pathname.startsWith('/f/') ? loc.pathname.split('/')[2] : ''
+  let forumName = ''
+  if (forumGroups) for (const g of forumGroups) { const f = g.forums.find(f => f.id === forumId); if (f) { forumName = f.name; break } }
+
   const title = (() => {
     if (isThread) return '串详情'
-    if (loc.pathname.startsWith('/f/')) return '版块'
+    if (loc.pathname.startsWith('/f/')) return forumName || `版块 ${forumId}`
     if (loc.pathname.startsWith('/timeline/')) return '时间线'
-    if (loc.pathname.startsWith('/favorites')) return '收藏'
-    if (loc.pathname.startsWith('/history')) return '历史'
+    if (loc.pathname.startsWith('/favorites')) return `收藏 (${favCount})`
+    if (loc.pathname.startsWith('/history')) return `历史 (${historyCount})`
     if (loc.pathname.startsWith('/settings')) return '设置'
     return ''
   })()
@@ -56,6 +67,11 @@ export default function NavBar() {
         )}
 
         <div className="flex-1" />
+        {loc.pathname.startsWith('/history') && historyCount > 0 && (
+          <Button isIconOnly variant="ghost" size="sm" onPress={() => { if (confirm('清空所有历史？')) clearHistory() }} aria-label="清空历史">
+            <Trash2 size={18} />
+          </Button>
+        )}
         <Button isIconOnly variant="ghost" size="sm" onPress={() => nav('/settings')} aria-label="设置">
           <Settings size={18} />
         </Button>
