@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Star, MessageSquare, ChevronRight, X } from 'lucide-react'
 import { Chip } from '@heroui/react'
 import { getImageUrl } from '../api/client'
@@ -7,10 +6,9 @@ import type { ForumThread } from '../types/api'
 import { stripHtml, truncateText, formatTime } from '../hooks/useUtils'
 import { useSettingsStore } from '../store/settings'
 import { useFavoritesStore } from '../store/favorites'
-interface Props { thread: ForumThread; forumName?: string }
+interface Props { thread: ForumThread; forumName?: string; onOpen?: () => void }
 
-export default function ThreadCard({ thread, forumName }: Props) {
-  const nav = useNavigate()
+export default function ThreadCard({ thread, forumName, onOpen }: Props) {
   const { imageMode } = useSettingsStore()
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore()
   const [imgLoaded, setImgLoaded] = useState(false)
@@ -26,7 +24,7 @@ export default function ThreadCard({ thread, forumName }: Props) {
 
   return (
     <>
-      <div onClick={() => nav(`/t/${thread.id}`)}
+      <div onClick={onOpen}
         className="px-3 py-2.5 border-b border-divider cursor-pointer hover:bg-default-50 active:bg-default-100 active:scale-[0.99] transition-all duration-150 origin-left">
         <div className="flex gap-2.5">
           {hasImage && imageMode !== 'hidden' && (
