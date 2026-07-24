@@ -28,7 +28,8 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
 
   const hasImage = post.img && post.ext
   const isPoMain = isPo || post.user_hash === poHash
-  const isTip = !('fid' in post) || !(post as Post).fid
+  // Reference type has 'status' field; don't render as system-tip
+  const isTip = !('status' in post) && (!('fid' in post) || !(post as Post).fid)
 
   const handleContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const t = e.target as HTMLElement

@@ -74,6 +74,7 @@ export interface Reference {
   sage: number
   status: string
   admin: number
+  resto?: string
 }
 
 export interface FeedItem {
