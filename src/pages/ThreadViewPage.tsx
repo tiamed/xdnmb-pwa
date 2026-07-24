@@ -140,10 +140,9 @@ export default function ThreadViewPage() {
                 ref={virtualizer.measureElement}
                 style={{
                   position: 'absolute',
-                  top: 0,
+                  top: `${virtualItem.start}px`,
                   left: 0,
                   width: '100%',
-                  transform: `translateY(${virtualItem.start}px)`,
                 }}>
                 <PostItem post={reply} poHash={poHash} onQuoteClick={handleQuote}
                   onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} />
