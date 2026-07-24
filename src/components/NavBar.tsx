@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Eye, ArrowUpDown, Reply, Trash2, PencilLine } from 'lucide-react'
+import { ArrowLeft, Eye, ArrowUpDown, Reply, Trash2, PencilLine, Search as SearchIcon } from 'lucide-react'
 import { Button } from '@heroui/react'
 import { useForumList, useTimelineList } from '../hooks/useApi'
 import { useSettingsStore } from '../store/settings'
@@ -86,6 +86,11 @@ export default function NavBar() {
         )}
 
         <div className="flex-1" />
+        {loc.pathname.startsWith('/favorites') && (
+          <Button isIconOnly variant="ghost" size="sm" onPress={() => nav(`/favorites${loc.search.includes('search=1') ? '' : '?search=1'}`, { replace: true })} aria-label="搜索">
+            <SearchIcon size={18} />
+          </Button>
+        )}
         {loc.pathname.startsWith('/history') && historyCount > 0 && (
           <Button isIconOnly variant="ghost" size="sm" onPress={() => { if (confirm('清空所有历史？')) clearHistory() }} aria-label="清空历史">
             <Trash2 size={18} />
