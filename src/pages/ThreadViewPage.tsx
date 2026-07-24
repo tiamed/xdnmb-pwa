@@ -73,7 +73,7 @@ export default function ThreadViewPage() {
   if (!thread) return null
 
   return (
-    <div className="min-h-full page-enter pb-20">
+    <div className="min-h-full page-enter pb-14">
       {/* Toolbar */}
       <div className="sticky top-[49px] z-30 bg-background/90 backdrop-blur-md border-b border-divider px-3 py-1.5 flex items-center justify-between text-xs">
         <div className="flex items-center gap-1">
@@ -109,7 +109,7 @@ export default function ThreadViewPage() {
       </div>
 
       {/* Reply */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-divider p-2 z-30" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-divider px-2 py-1.5 z-30" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {replyOpen ? (
           <div className="space-y-2">
             {replyTo && (
@@ -130,8 +130,8 @@ export default function ThreadViewPage() {
           </div>
         ) : (
           <button onClick={() => setReplyOpen(true)}
-            className="w-full py-2.5 bg-accent text-accent-foreground rounded-xl text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-            <Reply size={16} />写回复
+            className="w-full py-2 bg-accent/10 text-accent rounded-xl text-sm font-medium hover:bg-accent/20 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 border border-accent/20">
+            <Reply size={15} />回复此串
           </button>
         )}
       </div>
