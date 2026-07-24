@@ -9,6 +9,14 @@ interface ThreadViewState {
   setReplyTo: (id: string | null) => void
   referencePostId: string | null
   setReferencePostId: (id: string | null) => void
+  currentPage: number
+  totalPages: number
+  setCurrentPage: (page: number) => void
+  setTotalPages: (total: number) => void
+  jumpToPage: number
+  setJumpToPage: (page: number) => void
+  threadTitle: string
+  setThreadTitle: (title: string) => void
 }
 
 export const useThreadViewStore = create<ThreadViewState>((set) => ({
@@ -20,4 +28,12 @@ export const useThreadViewStore = create<ThreadViewState>((set) => ({
   setReplyTo: (replyTo) => set({ replyTo }),
   referencePostId: null,
   setReferencePostId: (referencePostId) => set({ referencePostId }),
+  currentPage: 1,
+  totalPages: 1,
+  setCurrentPage: (currentPage) => set({ currentPage }),
+  setTotalPages: (totalPages) => set({ totalPages }),
+  jumpToPage: 0,
+  setJumpToPage: (jumpToPage) => set({ jumpToPage }),
+  threadTitle: '',
+  setThreadTitle: (threadTitle) => set({ threadTitle }),
 }))

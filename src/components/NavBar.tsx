@@ -1,8 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Eye, ArrowUpDown, Reply, Trash2, PencilLine, Search as SearchIcon } from 'lucide-react'
+import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star } from 'lucide-react'
 import { Button } from '@heroui/react'
 import { useForumList, useTimelineList } from '../hooks/useApi'
-import { useSettingsStore } from '../store/settings'
 import { useThreadViewStore } from '../store/threadView'
 import { useForumViewStore } from '../store/forumView'
 import { useFavoritesStore } from '../store/favorites'
@@ -12,10 +11,13 @@ export default function NavBar() {
   const nav = useNavigate()
   const loc = useLocation()
   const isThread = loc.pathname.startsWith('/t/')
+  const tid = isThread ? loc.pathname.split('/')[2] : ''
   const poOnly = loc.search.includes('po=1')
-  const { replySort, setReplySort } = useSettingsStore()
+  const { currentPage, totalPages, setJumpToPage, threadTitle } = useThreadViewStore()
   const { data: forumGroups } = useForumList()
   const { data: timelines } = useTimelineList()
+  const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore()
+  const fav = isFavorite(tid)
   const favCount = useFavoritesStore(s => s.items.length)
   const historyCount = useHistoryStore(s => s.items.length)
   const clearHistory = useHistoryStore(s => s.clearHistory)
@@ -64,10 +66,23 @@ export default function NavBar() {
               className={`flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] transition-all ${poOnly ? 'bg-accent text-accent-foreground' : 'text-muted hover:bg-default-100'}`}>
               <Eye size={12} />PO
             </button>
-            <button onClick={() => setReplySort(replySort === 'asc' ? 'desc' : 'asc')}
-              className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] text-muted hover:bg-default-100">
-              <ArrowUpDown size={12} />{replySort === 'asc' ? '正序' : '倒序'}
-            </button>
+            <Button isIconOnly variant="ghost" size="sm" isDisabled={currentPage <= 1}
+              onPress={() => setJumpToPage(Math.max(1, currentPage - 1))} aria-label="上一页">
+              <ChevronLeft size={14} />
+            </Button>
+            <span className="text-[11px] text-muted px-0.5 select-none min-w-[40px] text-center tabular-nums">
+              {currentPage}/{totalPages}
+            </span>
+            <Button isIconOnly variant="ghost" size="sm" isDisabled={currentPage >= totalPages}
+              onPress={() => setJumpToPage(Math.min(totalPages, currentPage + 1))} aria-label="下一页">
+              <ChevronRight size={14} />
+            </Button>
+            <Button isIconOnly variant="ghost" size="sm"
+              onPress={() => fav ? removeFavorite(tid) : addFavorite({ id: tid, title: threadTitle, forumName: '', forumId: '', preview: '', img: '', ext: '', replyCount: 0 })}
+              aria-label={fav ? '取消收藏' : '收藏'}
+              style={{ color: fav ? 'var(--color-warning)' : undefined }}>
+              <Star size={14} fill={fav ? 'currentColor' : 'none'} />
+            </Button>
             <button onClick={() => useThreadViewStore.getState().setReplyOpen(true)}
               className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] text-accent font-medium hover:bg-accent-50 dark:hover:bg-accent-900/20">
               <Reply size={12} />回复

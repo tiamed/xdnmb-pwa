@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { Reply, Star } from 'lucide-react'
+import { Reply } from 'lucide-react'
 import { useInfiniteThread, useReplyThread } from '../hooks/useApi'
 import PostItem from '../components/PostItem'
 import ReferencePopup from '../components/ReferencePopup'
@@ -23,8 +23,9 @@ export default function ThreadViewPage() {
   const setReplyTo = useThreadViewStore(s => s.setReplyTo)
   const [replyContent, setReplyContent] = useState('')
   const [toast, setToast] = useState('')
-  const { replySort, autoLoadNext } = useSettingsStore()
-  const { isFavorite, addFavorite, removeFavorite, updateReplyCount } = useFavoritesStore()
+  const { autoLoadNext } = useSettingsStore()
+  const { updateReplyCount } = useFavoritesStore()
+  const { setCurrentPage, setTotalPages, setJumpToPage, setThreadTitle } = useThreadViewStore()
   const { addHistory } = useHistoryStore()
   const replyMutation = useReplyThread()
 
@@ -33,14 +34,36 @@ export default function ThreadViewPage() {
   const total = Number(thread?.ReplyCount || 0)
   const allReplies = data?.pages.flatMap(p => p.Replies || []) ?? []
   const poHash = thread?.user_hash
-  const fav = isFavorite(tid)
+
+  const loadedPages = data?.pages.length || 0
+  const repliesPerPage = data?.pages[0]?.Replies?.length || 20
+  const totalPages = Math.max(1, Math.ceil(total / repliesPerPage))
 
   useEffect(() => {
     if (thread) {
       addHistory({ id: thread.id, title: thread.title || '无标题', forumName: '', forumId: thread.fid || '', preview: truncateText(stripHtml(thread.content), 100), img: thread.img, ext: thread.ext, replyCount: total, visitedAt: Date.now() })
       updateReplyCount(thread.id, total)
+      setThreadTitle(thread.title || '无标题')
     }
   }, [!!thread])
+
+  useEffect(() => {
+    setCurrentPage(loadedPages)
+    setTotalPages(totalPages)
+  }, [loadedPages, totalPages])
+
+  const jumpToPage = useThreadViewStore(s => s.jumpToPage)
+  useEffect(() => {
+    if (jumpToPage <= 0) return
+    if (loadedPages < jumpToPage && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage()
+    } else if (loadedPages >= jumpToPage) {
+      setCurrentPage(jumpToPage)
+      setJumpToPage(0)
+      const el = document.getElementById('main-scroll-container')
+      el?.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, [jumpToPage, loadedPages, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   useEffect(() => {
     if (!autoLoadNext || !hasNextPage || isFetchingNextPage) return
@@ -67,7 +90,7 @@ export default function ThreadViewPage() {
     } catch { setToast('回复失败'); setTimeout(() => setToast(''), 2000) }
   }
 
-  const displayed = (replySort === 'desc' ? [...allReplies].reverse() : allReplies).filter(r => !poOnly || r.user_hash === poHash)
+  const displayed = allReplies.filter(r => !poOnly || r.user_hash === poHash)
 
   if (isLoading && !thread) return <div className="page-enter"><ListSkeleton count={6} /></div>
   if (error) return <div className="page-enter flex flex-col items-center justify-center py-20"><p className="text-danger text-sm mb-4">加载失败</p><button onClick={() => refetch()} className="px-4 py-2 text-sm bg-accent text-accent-foreground rounded-xl">重试</button></div>
@@ -77,14 +100,6 @@ export default function ThreadViewPage() {
     <div className="min-h-full page-enter pb-4">
       <div data-pid={thread.id}>
         <PostItem post={thread as Post} isPo onQuoteClick={handleQuote} onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} />
-        <div className="flex items-center justify-end px-3 py-1.5 gap-1 border-b border-divider">
-          <button onClick={() => fav ? removeFavorite(tid) : addFavorite({ id: tid, title: thread.title || '无标题', forumName: '', forumId: thread.fid || '', preview: truncateText(stripHtml(thread.content), 100), img: thread.img, ext: thread.ext, replyCount: total })}
-            className="flex items-center gap-1 text-xs transition-colors"
-            style={{ color: fav ? 'var(--color-warning)' : 'var(--color-muted)' }}>
-            <Star size={14} fill={fav ? 'currentColor' : 'none'} />
-            {fav ? '已收藏' : '收藏'}
-          </button>
-        </div>
       </div>
       <div className="border-t-2 border-default-200 dark:border-default-700">
         {displayed.map(r => <div key={r.id} data-pid={r.id}><PostItem post={r} poHash={poHash} onQuoteClick={handleQuote} onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} /></div>)}
