@@ -164,7 +164,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-divider gap-3">
       <span className="text-sm text-default-700 shrink-0">{label}</span>
-      <div className="flex items-center shrink-0">{children}</div>
+      <div className="flex items-center min-w-0 flex-1 justify-end">{children}</div>
     </div>
   )
 }
