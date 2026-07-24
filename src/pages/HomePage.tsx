@@ -50,11 +50,6 @@ export default function HomePage() {
         </div>
 
         <div className="p-4 max-w-2xl mx-auto">
-          <div className="mb-6 pt-1">
-            <h1 className="text-2xl font-bold text-foreground">X岛</h1>
-            <p className="text-sm text-muted mt-0.5">匿名版，自由讨论</p>
-          </div>
-
           <div className="mb-6">
             <h2 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">时间线</h2>
             {!timelines ? (
