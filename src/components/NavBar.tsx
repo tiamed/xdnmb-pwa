@@ -91,6 +91,11 @@ export default function NavBar() {
             <SearchIcon size={18} />
           </Button>
         )}
+        {loc.pathname.startsWith('/history') && (
+          <Button isIconOnly variant="ghost" size="sm" onPress={() => nav(`/history${loc.search.includes('search=1') ? '' : '?search=1'}`, { replace: true })} aria-label="搜索">
+            <SearchIcon size={18} />
+          </Button>
+        )}
         {loc.pathname.startsWith('/history') && historyCount > 0 && (
           <Button isIconOnly variant="ghost" size="sm" onPress={() => { if (confirm('清空所有历史？')) clearHistory() }} aria-label="清空历史">
             <Trash2 size={18} />
