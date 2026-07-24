@@ -106,7 +106,7 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
         )}
 
         {/* Content */}
-        <div className="text-sm leading-relaxed break-words text-foreground/80 [overflow-wrap:anywhere]" style={{ fontSize: `${fontSize}px` }}
+        <div className="post-content text-sm leading-relaxed break-words text-foreground/80 [overflow-wrap:anywhere]" style={{ fontSize: `${fontSize}px` }}
           onClick={handleContentClick} dangerouslySetInnerHTML={renderHTML()} />
 
       </div>

@@ -7,7 +7,25 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-html, body, #root { height: 100%; margin: 0; padding: 0; }
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* post content rendered via dangerouslySetInnerHTML may contain wide media */
+.post-content img { max-width: 100%; height: auto; }
+.post-content video { max-width: 100%; height: auto; }
+.post-content pre,
+.post-content code {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.post-content table { max-width: 100%; display: block; overflow-x: auto; }
 
 @utility scrollbar-none {
   &::-webkit-scrollbar { display: none; }
