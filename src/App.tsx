@@ -6,7 +6,6 @@ import HomePage from './pages/HomePage'
 import ForumViewPage from './pages/ForumViewPage'
 import ThreadViewPage from './pages/ThreadViewPage'
 import TimelinePage from './pages/TimelinePage'
-import SearchPage from './pages/SearchPage'
 import FavoritesPage from './pages/FavoritesPage'
 import HistoryPage from './pages/HistoryPage'
 import SettingsPage from './pages/SettingsPage'
@@ -34,7 +33,6 @@ function App() {
             <Route path="/f/:id" element={<ForumViewPage />} />
             <Route path="/t/:id" element={<ThreadViewPage />} />
             <Route path="/timeline/:id" element={<TimelinePage />} />
-            <Route path="/search" element={<SearchPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/settings" element={<SettingsPage />} />

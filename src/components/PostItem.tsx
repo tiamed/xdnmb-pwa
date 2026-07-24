@@ -46,7 +46,7 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
 
   return (
     <>
-      <div className={`px-3 py-2.5 border-b border-divider ${isTip ? 'bg-warning-50/50 dark:bg-warning-900/10' : ''} ${isPoMain && !isTip ? 'bg-accent-50/30 dark:bg-accent-900/5' : ''}`}>
+      <div className={`px-3 py-2.5 border-b border-divider active:bg-default-50 transition-colors duration-150 ${isTip ? 'bg-warning-50/50 dark:bg-warning-900/10' : ''} ${isPoMain && !isTip ? 'bg-accent-50/30 dark:bg-accent-900/5' : ''}`}>
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-1 text-xs mb-1">
           <div className="flex items-center gap-1.5 flex-wrap min-w-0">

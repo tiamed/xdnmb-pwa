@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { Star, ArrowUpDown, Eye, Reply } from 'lucide-react'
-import { Button } from '@heroui/react'
+import { useState, useEffect } from 'react'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { Reply } from 'lucide-react'
 import { useInfiniteThread, useReplyThread } from '../hooks/useApi'
 import PostItem from '../components/PostItem'
 import { ListSkeleton } from '../components/Skeleton'
@@ -13,13 +12,14 @@ import type { Post } from '../types/api'
 
 export default function ThreadViewPage() {
   const { id: rawId } = useParams<{ id: string }>()
+  const [sp] = useSearchParams()
   const tid = rawId || ''
-  const [poOnly, setPoOnly] = useState(false)
+  const poOnly = sp.get('po') === '1'
   const [replyOpen, setReplyOpen] = useState(false)
   const [replyContent, setReplyContent] = useState('')
   const [replyTo, setReplyTo] = useState<string | null>(null)
   const { replySort, autoLoadNext } = useSettingsStore()
-  const { addFavorite, removeFavorite, isFavorite, updateReplyCount } = useFavoritesStore()
+  const { updateReplyCount } = useFavoritesStore()
   const { addHistory } = useHistoryStore()
   const replyMutation = useReplyThread()
 
@@ -27,10 +27,8 @@ export default function ThreadViewPage() {
   const thread = data?.pages[0]
   const total = Number(thread?.ReplyCount || 0)
   const allReplies = data?.pages.flatMap(p => p.Replies || []) ?? []
-  const isFav = isFavorite(tid)
   const poHash = thread?.user_hash
 
-  // save history on first load
   useEffect(() => {
     if (thread) {
       addHistory({ id: thread.id, title: thread.title || '无标题', forumName: '', forumId: thread.fid || '', preview: truncateText(stripHtml(thread.content), 100), img: thread.img, ext: thread.ext, replyCount: total, visitedAt: Date.now() })
@@ -38,7 +36,6 @@ export default function ThreadViewPage() {
     }
   }, [!!thread])
 
-  // infinite scroll
   useEffect(() => {
     if (!autoLoadNext || !hasNextPage || isFetchingNextPage) return
     const h = () => { if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 300) fetchNextPage() }
@@ -62,34 +59,11 @@ export default function ThreadViewPage() {
   const displayed = (replySort === 'desc' ? [...allReplies].reverse() : allReplies).filter(r => !poOnly || r.user_hash === poHash)
 
   if (isLoading && !thread) return <div className="page-enter"><ListSkeleton count={6} /></div>
-  if (error) return <div className="page-enter flex flex-col items-center justify-center py-20"><p className="text-danger text-sm mb-4">加载失败</p><Button variant="secondary" onPress={() => refetch()}>重试</Button></div>
+  if (error) return <div className="page-enter flex flex-col items-center justify-center py-20"><p className="text-danger text-sm mb-4">加载失败</p><button onClick={() => refetch()} className="px-4 py-2 text-sm bg-accent text-accent-foreground rounded-xl">重试</button></div>
   if (!thread) return null
 
   return (
-    <div className="min-h-full page-enter pb-14">
-      <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-divider px-3 py-1.5 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-1">
-          <button onClick={() => setPoOnly(!poOnly)}
-            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-all ${poOnly ? 'bg-accent text-accent-foreground' : 'text-muted hover:bg-default-100'}`}>
-            <Eye size={14} />只看PO
-          </button>
-          <button onClick={() => useSettingsStore.getState().setReplySort(replySort === 'asc' ? 'desc' : 'asc')}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-muted hover:bg-default-100">
-            <ArrowUpDown size={14} />{replySort === 'asc' ? '正序' : '倒序'}
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-muted">{displayed.length}/{total}</span>
-          <button onClick={() => { if (!thread) return; isFav ? removeFavorite(thread.id) : addFavorite({
-            id: thread.id, title: thread.title || '无标题', forumName: '', forumId: thread.fid || '',
-            preview: truncateText(stripHtml(thread.content), 100), img: thread.img, ext: thread.ext, replyCount: total
-          }) }}
-            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg ${isFav ? 'text-warning bg-warning-50 dark:bg-warning-900/20' : 'text-muted hover:bg-default-100'}`}>
-            <Star size={14} fill={isFav ? 'currentColor' : 'none'} />收藏
-          </button>
-        </div>
-      </div>
-
+    <div className="min-h-full page-enter pb-4">
       <div data-pid={thread.id}><PostItem post={thread as Post} isPo onQuoteClick={handleQuote} onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} /></div>
       <div className="border-t-2 border-default-200 dark:border-default-700">
         {displayed.map(r => <div key={r.id} data-pid={r.id}><PostItem post={r} poHash={poHash} onQuoteClick={handleQuote} onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} /></div>)}
@@ -98,32 +72,39 @@ export default function ThreadViewPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-divider px-2 py-1.5 z-30" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-        {replyOpen ? (
-          <div className="space-y-2">
+      {/* hidden trigger for NavBar reply button */}
+      <button data-open-reply onClick={() => setReplyOpen(true)} className="hidden" />
+
+      {/* reply popup */}
+      {replyOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col" onClick={() => setReplyOpen(false)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="relative mt-auto bg-background rounded-t-2xl p-4 animate-[slideUp_0.25s_ease-out] max-h-[70vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-foreground">{replyTo ? `回复 No.${replyTo}` : '回复此串'}</span>
+              <button onClick={() => { setReplyOpen(false); setReplyContent(''); setReplyTo(null) }} className="text-muted hover:text-foreground text-xl leading-none">&times;</button>
+            </div>
             {replyTo && (
-              <div className="flex items-center justify-between text-xs text-muted">
-                <span>回复 No.{replyTo}</span>
-                <button onClick={() => { setReplyTo(null); setReplyContent('') }} className="text-accent hover:underline">取消引用</button>
+              <div className="mb-2 text-xs text-muted">
+                引用 No.{replyTo}
+                <button onClick={() => { setReplyTo(null); setReplyContent('') }} className="ml-2 text-accent hover:underline">取消引用</button>
               </div>
             )}
-            <textarea value={replyContent} onChange={e => setReplyContent(e.target.value)} placeholder="输入回复…" rows={2}
-              className="w-full px-3 py-2 text-sm rounded-xl bg-default-100 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-none border-none" />
-            <div className="flex justify-end gap-2">
-              <button onClick={() => { setReplyOpen(false); setReplyContent('') }} className="px-3 py-1.5 text-sm text-muted hover:text-foreground transition-colors">取消</button>
+            <textarea value={replyContent} onChange={e => setReplyContent(e.target.value)} placeholder="输入回复…" rows={4} autoFocus
+              className="w-full px-3 py-2.5 text-sm rounded-xl bg-default-100 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-none border-none" />
+            <div className="flex justify-end gap-2 mt-3">
+              <button onClick={() => { setReplyOpen(false); setReplyContent(''); setReplyTo(null) }}
+                className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors">取消</button>
               <button onClick={submitReply} disabled={replyMutation.isPending || !replyContent.trim()}
-                className="px-4 py-1.5 text-sm bg-accent text-accent-foreground rounded-xl hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-1.5 active:scale-95">
-                {replyMutation.isPending ? <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />发送中</> : <><Reply size={14} />发送</>}
+                className="px-5 py-2 text-sm bg-accent text-accent-foreground rounded-xl hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-1.5 active:scale-95">
+                {replyMutation.isPending ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />发送中</> : <><Reply size={15} />发送</>}
               </button>
             </div>
           </div>
-        ) : (
-          <button onClick={() => setReplyOpen(true)}
-            className="w-full py-2 bg-accent/10 text-accent rounded-xl text-sm font-medium hover:bg-accent/20 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 border border-accent/20">
-            <Reply size={15} />回复此串
-          </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
