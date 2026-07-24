@@ -17,7 +17,6 @@ interface SettingsState {
   replySort: ReplySort
   autoLoadNext: boolean
   showSpoiler: boolean
-  fontSize: number
   feedUuid: string
   cookies: UserCookie[]
   activeCookieId: string | null
@@ -26,7 +25,6 @@ interface SettingsState {
   setReplySort: (sort: ReplySort) => void
   setAutoLoadNext: (v: boolean) => void
   setShowSpoiler: (v: boolean) => void
-  setFontSize: (size: number) => void
   setFeedUuid: (uuid: string) => void
   addCookie: (label: string, hash: string) => void
   updateCookie: (id: string, patch: Partial<Omit<UserCookie, 'id'>>) => void
@@ -45,7 +43,6 @@ export const useSettingsStore = create<SettingsState>()(
       replySort: 'asc',
       autoLoadNext: true,
       showSpoiler: false,
-      fontSize: 16,
       feedUuid: '',
       cookies: [],
       activeCookieId: null,
@@ -58,7 +55,6 @@ export const useSettingsStore = create<SettingsState>()(
       setReplySort: (replySort) => set({ replySort }),
       setAutoLoadNext: (autoLoadNext) => set({ autoLoadNext }),
       setShowSpoiler: (showSpoiler) => set({ showSpoiler }),
-      setFontSize: (fontSize) => set({ fontSize }),
       setFeedUuid: (feedUuid) => set({ feedUuid }),
 
       addCookie: (label, hash) => set((s) => {
@@ -98,7 +94,6 @@ export const useSettingsStore = create<SettingsState>()(
         replySort: state.replySort,
         autoLoadNext: state.autoLoadNext,
         showSpoiler: state.showSpoiler,
-        fontSize: state.fontSize,
         feedUuid: state.feedUuid,
         cookies: state.cookies,
         activeCookieId: state.activeCookieId,

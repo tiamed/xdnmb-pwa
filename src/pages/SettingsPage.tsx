@@ -3,7 +3,7 @@ import { useSettingsStore, type ImageMode, type ReplySort } from '../store/setti
 import { getApiBaseUrl, setApiBase, getFeed } from '../api/client'
 import { useFavoritesStore } from '../store/favorites'
 import { Button } from '@heroui/react'
-import { Sun, Moon, Monitor, Minus, Plus, RefreshCw, Trash2, PlusCircle, Check } from 'lucide-react'
+import { Sun, Moon, Monitor, RefreshCw, Trash2, PlusCircle, Check } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
   const {
     imageMode, setImageMode, replySort, setReplySort,
-    autoLoadNext, setAutoLoadNext, fontSize, setFontSize,
+    autoLoadNext, setAutoLoadNext,
     feedUuid, setFeedUuid,
     cookies, activeCookieId,
     addCookie, updateCookie, removeCookie, setActiveCookie,
@@ -93,15 +93,6 @@ export default function SettingsPage() {
             className="px-2.5 py-1.5 text-sm rounded-lg bg-default-100 text-foreground border-none focus:ring-2 focus:ring-accent outline-none">
             <option value="default">正常</option><option value="blur">模糊</option><option value="hidden">不显示</option>
           </select>
-        </Row>
-        <Row label="字号">
-          <div className="flex items-center gap-2">
-            <button onClick={() => setFontSize(Math.max(12, fontSize - 1))}
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-default-100 hover:bg-default-200 text-default-600 active:scale-90"><Minus size={13} /></button>
-            <span className="w-8 text-center text-sm font-medium">{fontSize}</span>
-            <button onClick={() => setFontSize(Math.min(24, fontSize + 1))}
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-default-100 hover:bg-default-200 text-default-600 active:scale-90"><Plus size={13} /></button>
-          </div>
         </Row>
         <Row label="自动翻页">
           <ToggleSwitch checked={autoLoadNext} onChange={setAutoLoadNext} />
