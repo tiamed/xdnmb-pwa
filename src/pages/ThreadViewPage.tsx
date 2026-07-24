@@ -5,6 +5,7 @@ import { useInfiniteThread, useReplyThread } from '../hooks/useApi'
 import PostItem from '../components/PostItem'
 import { ListSkeleton } from '../components/Skeleton'
 import { useSettingsStore } from '../store/settings'
+import { useThreadViewStore } from '../store/threadView'
 import { useFavoritesStore } from '../store/favorites'
 import { useHistoryStore } from '../store/history'
 import { stripHtml, truncateText } from '../hooks/useUtils'
@@ -15,9 +16,12 @@ export default function ThreadViewPage() {
   const [sp] = useSearchParams()
   const tid = rawId || ''
   const poOnly = sp.get('po') === '1'
-  const [replyOpen, setReplyOpen] = useState(false)
+  const replyOpen = useThreadViewStore(s => s.replyOpen)
+  const setReplyOpen = useThreadViewStore(s => s.setReplyOpen)
+  const replyTo = useThreadViewStore(s => s.replyTo)
+  const setReplyTo = useThreadViewStore(s => s.setReplyTo)
   const [replyContent, setReplyContent] = useState('')
-  const [replyTo, setReplyTo] = useState<string | null>(null)
+  const [toast, setToast] = useState('')
   const { replySort, autoLoadNext } = useSettingsStore()
   const { updateReplyCount } = useFavoritesStore()
   const { addHistory } = useHistoryStore()
@@ -53,7 +57,8 @@ export default function ThreadViewPage() {
     try {
       await replyMutation.mutateAsync({ resto: tid, content: replyContent })
       setReplyContent(''); setReplyOpen(false); setReplyTo(null); refetch()
-    } catch { alert('回复失败') }
+      setToast('回复成功'); setTimeout(() => setToast(''), 2000)
+    } catch { setToast('回复失败'); setTimeout(() => setToast(''), 2000) }
   }
 
   const displayed = (replySort === 'desc' ? [...allReplies].reverse() : allReplies).filter(r => !poOnly || r.user_hash === poHash)
@@ -68,12 +73,18 @@ export default function ThreadViewPage() {
       <div className="border-t-2 border-default-200 dark:border-default-700">
         {displayed.map(r => <div key={r.id} data-pid={r.id}><PostItem post={r} poHash={poHash} onQuoteClick={handleQuote} onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} /></div>)}
         <div className="p-4 text-center text-sm text-muted">
-          {isFetchingNextPage ? '加载中…' : !hasNextPage && total > 0 ? `— 共 ${total} 条回复 —` : null}
+          {isFetchingNextPage ? '加载中…' : !hasNextPage && total > 0 ? `— 共 ${total} 条回复 —` : !autoLoadNext && hasNextPage ? (
+            <button onClick={() => fetchNextPage()} className="px-4 py-2 text-sm bg-accent text-accent-foreground rounded-xl hover:opacity-90 transition-all active:scale-95">加载更多回复</button>
+          ) : null}
         </div>
       </div>
 
-      {/* hidden trigger for NavBar reply button */}
-      <button data-open-reply onClick={() => setReplyOpen(true)} className="hidden" />
+      {/* toast */}
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-xl text-sm font-medium text-white bg-default-900/90 dark:bg-default-100/90 dark:text-default-900 animate-[fadeSlideIn_.2s_ease-out] shadow-lg pointer-events-none">
+          {toast}
+        </div>
+      )}
 
       {/* reply popup */}
       {replyOpen && (

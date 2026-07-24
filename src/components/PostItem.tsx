@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Reply, ImageOff, X, ZoomIn } from 'lucide-react'
 import { Chip } from '@heroui/react'
 import { getImageUrl } from '../api/client'
@@ -23,6 +23,7 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
   const [viewerOpen, setViewerOpen] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [pos, setPos] = useState({ x: 0, y: 0 })
+  const touchRef = useRef<{ x: number; y: number; dist: number; zoom: number; px: number; py: number } | null>(null)
 
   const hasImage = post.img && post.ext
   const isPoMain = isPo || post.user_hash === poHash
@@ -131,6 +132,31 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
                 const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up) }
                 document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up)
               }}
+              onTouchStart={e => {
+                if (e.touches.length === 1) {
+                  touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, dist: 0, zoom, px: pos.x, py: pos.y }
+                } else if (e.touches.length === 2) {
+                  const dx = e.touches[0].clientX - e.touches[1].clientX
+                  const dy = e.touches[0].clientY - e.touches[1].clientY
+                  touchRef.current = { x: 0, y: 0, dist: Math.hypot(dx, dy), zoom, px: pos.x, py: pos.y }
+                }
+              }}
+              onTouchMove={e => {
+                const cur = touchRef.current
+                if (!cur) return
+                if (e.touches.length === 1) {
+                  const dx = e.touches[0].clientX - cur.x
+                  const dy = e.touches[0].clientY - cur.y
+                  setPos({ x: cur.px + dx, y: cur.py + dy })
+                } else if (e.touches.length === 2) {
+                  const dx = e.touches[0].clientX - e.touches[1].clientX
+                  const dy = e.touches[0].clientY - e.touches[1].clientY
+                  const dist = Math.hypot(dx, dy)
+                  const scale = dist / cur.dist
+                  setZoom(Math.max(0.5, Math.min(5, cur.zoom * scale)))
+                }
+              }}
+              onTouchEnd={() => { touchRef.current = null }}
               onDoubleClick={() => { if (zoom > 1) { setZoom(1); setPos({ x: 0, y: 0 }) } else { setZoom(2) } }}
             />
           </div>

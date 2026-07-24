@@ -56,7 +56,9 @@ export default function ForumViewPage() {
             </div>
           ))}
           <div className="p-4 text-center text-sm text-muted">
-            {isFetchingNextPage ? '加载中…' : !hasNextPage && threads.length > 0 ? '— 没有更多了 —' : null}
+            {isFetchingNextPage ? '加载中…' : !hasNextPage && threads.length > 0 ? '— 没有更多了 —' : !autoLoadNext && hasNextPage ? (
+              <button onClick={() => fetchNextPage()} className="px-4 py-2 text-sm bg-accent text-accent-foreground rounded-xl hover:opacity-90 transition-all active:scale-95">加载更多</button>
+            ) : null}
           </div>
         </div>
       )}

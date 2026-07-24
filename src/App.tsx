@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { SearchX } from 'lucide-react'
 import NavBar from './components/NavBar'
@@ -12,6 +13,11 @@ import SettingsPage from './pages/SettingsPage'
 
 function App() {
   const location = useLocation()
+
+  useEffect(() => {
+    document.querySelector('main')?.scrollTo(0, 0)
+  }, [location.pathname])
+
   const getActiveTab = () => {
     const p = location.pathname
     if (p === '/' || p.startsWith('/f/') || p.startsWith('/timeline/')) return 'home'

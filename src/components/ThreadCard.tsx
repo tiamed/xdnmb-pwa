@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Star, MessageSquare, ChevronRight, X } from 'lucide-react'
 import { Chip } from '@heroui/react'
@@ -17,6 +17,8 @@ export default function ThreadCard({ thread, forumName }: Props) {
   const [imgError, setImgError] = useState(false)
   const [viewerOpen, setViewerOpen] = useState(false)
   const [zoom, setZoom] = useState(1)
+  const [pos, setPos] = useState({ x: 0, y: 0 })
+  const touchRef = useRef<{ x: number; y: number; dist: number; zoom: number; px: number; py: number } | null>(null)
   const fav = isFavorite(thread.id)
   const preview = stripHtml(thread.content)
   const hasImage = thread.img && thread.ext
@@ -86,12 +88,44 @@ export default function ThreadCard({ thread, forumName }: Props) {
           <button onClick={() => setViewerOpen(false)} className="absolute top-4 right-4 z-10 p-2 bg-black/40 rounded-full text-white hover:bg-black/60 transition-colors">
             <X size={20} />
           </button>
-          <div onClick={e => e.stopPropagation()} className="max-w-[90vw] max-h-[85vh] overflow-hidden">
+          <div onClick={e => e.stopPropagation()} className="max-w-[90vw] max-h-[85vh] overflow-hidden select-none">
             <img src={getImageUrl(thread.img, thread.ext)} alt=""
-              className="max-w-[90vw] max-h-[85vh] object-contain cursor-grab select-none transition-transform duration-75"
-              style={{ transform: `scale(${zoom})` }}
+              className="max-w-[90vw] max-h-[85vh] object-contain cursor-grab active:cursor-grabbing"
+              style={{ transform: `scale(${zoom}) translate(${pos.x / zoom}px, ${pos.y / zoom}px)` }}
               onWheel={e => { e.preventDefault(); setZoom(z => Math.max(0.5, Math.min(5, z - e.deltaY * 0.005))) }}
-              onDoubleClick={() => setZoom(z => z === 1 ? 2 : 1)} />
+              onMouseDown={e => {
+                if (e.button !== 0) return
+                const sx = e.clientX - pos.x, sy = e.clientY - pos.y
+                const mv = (e: MouseEvent) => setPos({ x: e.clientX - sx, y: e.clientY - sy })
+                const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up) }
+                document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up)
+              }}
+              onTouchStart={e => {
+                if (e.touches.length === 1) {
+                  touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, dist: 0, zoom, px: pos.x, py: pos.y }
+                } else if (e.touches.length === 2) {
+                  const dx = e.touches[0].clientX - e.touches[1].clientX
+                  const dy = e.touches[0].clientY - e.touches[1].clientY
+                  touchRef.current = { x: 0, y: 0, dist: Math.hypot(dx, dy), zoom, px: pos.x, py: pos.y }
+                }
+              }}
+              onTouchMove={e => {
+                const cur = touchRef.current
+                if (!cur) return
+                if (e.touches.length === 1) {
+                  const dx = e.touches[0].clientX - cur.x
+                  const dy = e.touches[0].clientY - cur.y
+                  setPos({ x: cur.px + dx, y: cur.py + dy })
+                } else if (e.touches.length === 2) {
+                  const dx = e.touches[0].clientX - e.touches[1].clientX
+                  const dy = e.touches[0].clientY - e.touches[1].clientY
+                  const dist = Math.hypot(dx, dy)
+                  const scale = dist / cur.dist
+                  setZoom(Math.max(0.5, Math.min(5, cur.zoom * scale)))
+                }
+              }}
+              onTouchEnd={() => { touchRef.current = null }}
+              onDoubleClick={() => { if (zoom > 1) { setZoom(1); setPos({ x: 0, y: 0 }) } else { setZoom(2) } }} />
           </div>
         </div>
       )}

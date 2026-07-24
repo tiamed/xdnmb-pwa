@@ -8,7 +8,7 @@ export default function FavoritesPage() {
   const nav = useNavigate()
   const { items, clearFavorites } = useFavoritesStore()
   const threads: ForumThread[] = items.map(i => ({
-    id: i.id, fid: i.forumId, ReplyCount: String(i.replyCount), img: i.img, ext: i.ext,
+    id: i.id, fid: i.forumId, ReplyCount: String(i.lastReplyCount ?? i.replyCount), img: i.img, ext: i.ext,
     now: new Date(i.addedAt).toLocaleString(), user_hash: '', name: '', title: i.title, content: i.preview,
     sage: 0, admin: 0, Hide: 0, Replies: [],
   }))

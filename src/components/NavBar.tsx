@@ -4,6 +4,7 @@ import { Sun, Moon, Monitor, Settings, ArrowLeft, Eye, ArrowUpDown, Reply } from
 import { Button } from '@heroui/react'
 import { useTheme } from 'next-themes'
 import { useSettingsStore } from '../store/settings'
+import { useThreadViewStore } from '../store/threadView'
 
 export default function NavBar() {
   const nav = useNavigate()
@@ -33,7 +34,7 @@ export default function NavBar() {
     <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-divider">
       <div className="flex items-center h-12 px-2 gap-1 max-w-3xl mx-auto w-full">
         {isDetail && (
-          <Button isIconOnly variant="ghost" size="sm" onPress={() => nav(-1)} aria-label="返回">
+          <Button isIconOnly variant="ghost" size="sm" onPress={() => { if (window.history.length > 1) nav(-1); else nav('/') }} aria-label="返回">
             <ArrowLeft size={18} />
           </Button>
         )}
@@ -54,7 +55,7 @@ export default function NavBar() {
               className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] text-muted hover:bg-default-100">
               <ArrowUpDown size={12} />{replySort === 'asc' ? '正序' : '倒序'}
             </button>
-            <button onClick={() => { document.querySelector<HTMLElement>('[data-open-reply]')?.click() }}
+            <button onClick={() => useThreadViewStore.getState().setReplyOpen(true)}
               className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] text-accent font-medium hover:bg-accent-50 dark:hover:bg-accent-900/20">
               <Reply size={12} />回复
             </button>

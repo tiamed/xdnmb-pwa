@@ -13,7 +13,7 @@ export default function SettingsPage() {
     autoLoadNext, setAutoLoadNext, fontSize, setFontSize,
     feedUuid, setFeedUuid, userHash, setUserHash,
   } = useSettingsStore()
-  const { addFavorite } = useFavoritesStore()
+  const { syncFromFeed } = useFavoritesStore()
 
   const [apiUrl, setApiUrl] = useState(getApiBaseUrl())
   const [hashInput, setHashInput] = useState(userHash)
@@ -29,15 +29,18 @@ export default function SettingsPage() {
     setSyncing(true)
     setSyncMsg('同步中…')
     try {
-      const items = await getFeed(uuid, 1)
       let count = 0
-      for (const item of items) {
-        addFavorite({
-          id: item.id, title: item.title || '无标题', forumName: '',
-          forumId: item.fid, preview: item.content,
-          img: item.img, ext: item.ext, replyCount: Number(item.reply_count || 0),
-        })
-        count++
+      for (let page = 1; ; page++) {
+        const items = await getFeed(uuid, page)
+        if (items.length === 0) break
+        for (const item of items) {
+          syncFromFeed({
+            id: item.id, title: item.title || '无标题', forumName: '',
+            forumId: item.fid, preview: item.content,
+            img: item.img, ext: item.ext, replyCount: Number(item.reply_count || 0),
+          })
+          count++
+        }
       }
       setSyncMsg(`已同步 ${count} 个订阅`)
       setTimeout(() => setSyncMsg(''), 3000)

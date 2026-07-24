@@ -20,6 +20,7 @@ interface FavoritesState {
   removeFavorite: (id: string) => void
   isFavorite: (id: string) => boolean
   updateReplyCount: (id: string, replyCount: number) => void
+  syncFromFeed: (thread: Omit<FavoriteThread, 'addedAt' | 'lastReplyCount'>) => void
   clearFavorites: () => void
 }
 
@@ -53,6 +54,27 @@ export const useFavoritesStore = create<FavoritesState>()(
             i.id === id ? { ...i, lastReplyCount: replyCount } : i,
           ),
         })
+      },
+
+      syncFromFeed: (thread) => {
+        const { items } = get()
+        const existing = items.find((i) => i.id === thread.id)
+        if (existing) {
+          set({
+            items: items.map((i) =>
+              i.id === thread.id
+                ? { ...i, replyCount: thread.replyCount, lastReplyCount: thread.replyCount, forumName: thread.forumName, forumId: thread.forumId, title: thread.title, preview: thread.preview, img: thread.img, ext: thread.ext }
+                : i,
+            ),
+          })
+        } else {
+          const newItem: FavoriteThread = {
+            ...thread,
+            addedAt: Date.now(),
+            lastReplyCount: thread.replyCount,
+          }
+          set({ items: [newItem, ...items] })
+        }
       },
 
       clearFavorites: () => {
