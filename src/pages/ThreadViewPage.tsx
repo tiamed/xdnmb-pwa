@@ -34,6 +34,8 @@ export default function ThreadViewPage() {
   const replyMutation = useReplyThread()
   const queryClient = useQueryClient()
   const listRef = useRef<HTMLDivElement>(null)
+  const topSentinelRef = useRef<HTMLDivElement>(null)
+  const bottomSentinelRef = useRef<HTMLDivElement>(null)
 
   const { data, isLoading, isFetchingNextPage, isFetchingPreviousPage, fetchNextPage, fetchPreviousPage, hasNextPage, hasPreviousPage, error, refetch } = useInfiniteThread(tid)
 
@@ -74,20 +76,34 @@ export default function ThreadViewPage() {
     el?.scrollTo({ top: 0 })
   }, [jumpTarget])
 
+  const hasPrevRef = useRef(hasPreviousPage)
+  hasPrevRef.current = hasPreviousPage
+  const hasNextRef = useRef(hasNextPage)
+  hasNextRef.current = hasNextPage
+  const fetchingPrevRef = useRef(isFetchingPreviousPage)
+  fetchingPrevRef.current = isFetchingPreviousPage
+  const fetchingNextRef = useRef(isFetchingNextPage)
+  fetchingNextRef.current = isFetchingNextPage
+  const fetchPrevRef = useRef(fetchPreviousPage)
+  fetchPrevRef.current = fetchPreviousPage
+  const fetchNextRef = useRef(fetchNextPage)
+  fetchNextRef.current = fetchNextPage
+
   useEffect(() => {
     const el = document.getElementById('main-scroll-container')
-    if (!el) return
-    const handler = () => {
-      if (el.scrollTop < 200 && hasPreviousPage && !isFetchingPreviousPage) {
-        fetchPreviousPage()
-      }
-      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 400 && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage()
-      }
-    }
-    el.addEventListener('scroll', handler, { passive: true })
-    return () => el.removeEventListener('scroll', handler)
-  }, [hasNextPage, hasPreviousPage, isFetchingNextPage, isFetchingPreviousPage, fetchNextPage, fetchPreviousPage])
+    if (!el || !topSentinelRef.current || !bottomSentinelRef.current) return
+    const prevObserver = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && hasPrevRef.current && !fetchingPrevRef.current) fetchPrevRef.current() },
+      { root: el, rootMargin: '200px 0px 0px 0px' }
+    )
+    prevObserver.observe(topSentinelRef.current)
+    const nextObserver = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && hasNextRef.current && !fetchingNextRef.current) fetchNextRef.current() },
+      { root: el, rootMargin: '0px 0px 400px 0px' }
+    )
+    nextObserver.observe(bottomSentinelRef.current)
+    return () => { prevObserver.disconnect(); nextObserver.disconnect() }
+  }, [])
 
   useEffect(() => {
     if (thread) {
@@ -127,6 +143,7 @@ export default function ThreadViewPage() {
 
   return (
     <div className="min-h-full page-enter pb-4">
+      <div ref={topSentinelRef} />
       <div data-pid={thread.id}>
         <PostItem post={thread as Post} isPo onQuoteClick={handleQuote}
           onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} />
@@ -158,6 +175,7 @@ export default function ThreadViewPage() {
             `— 共 ${total} 条回复 —`
           ) : null}
         </div>
+        <div ref={bottomSentinelRef} />
       </div>
 
       {toast && (
