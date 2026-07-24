@@ -14,7 +14,8 @@ export default function HistoryPage() {
   const [actionTarget, setActionTarget] = useState<string | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  const filtered = items.filter(i => !searchQuery || i.title.toLowerCase().includes(searchQuery.toLowerCase()) || stripHtml(i.preview).toLowerCase().includes(searchQuery.toLowerCase()) || i.id.includes(searchQuery) || i.forumName.toLowerCase().includes(searchQuery.toLowerCase()))
+  const q = searchQuery.toLowerCase()
+  const filtered = items.filter(i => !searchQuery || (i.title || '').toLowerCase().includes(q) || (stripHtml(i.preview) || '').toLowerCase().includes(q) || (i.id || '').includes(searchQuery) || (i.forumName || '').toLowerCase().includes(q))
 
   const closeSearch = () => {
     setSp({})

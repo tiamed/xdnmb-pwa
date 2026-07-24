@@ -37,7 +37,8 @@ export function renderSpoilers(content: string, revealed = false): string {
 /**
  * 去除 HTML 标签，获取纯文本预览
  */
-export function stripHtml(html: string): string {
+export function stripHtml(html: string | null | undefined): string {
+  if (!html) return ''
   const tmp = document.createElement('div')
   tmp.innerHTML = html
   return tmp.textContent || tmp.innerText || ''
