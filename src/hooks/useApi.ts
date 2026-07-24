@@ -70,6 +70,10 @@ export function useInfiniteThread(threadId: string) {
       const loaded = (_all || []).reduce((s, p) => s + (p?.Replies?.length || 0), 0)
       return loaded < total ? lastPageParam + 1 : undefined
     },
+    getPreviousPageParam: (_firstPage, _all, firstPageParam) => {
+      return firstPageParam > 1 ? firstPageParam - 1 : undefined
+    },
+    maxPages: 10,
     enabled: !!threadId,
     staleTime: 1000 * 15,
   })

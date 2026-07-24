@@ -1,5 +1,6 @@
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star } from 'lucide-react'
+import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, FileText } from 'lucide-react'
 import { Button } from '@heroui/react'
 import { useForumList, useTimelineList } from '../hooks/useApi'
 import { useThreadViewStore } from '../store/threadView'
@@ -10,6 +11,19 @@ import { useHistoryStore } from '../store/history'
 export default function NavBar() {
   const nav = useNavigate()
   const loc = useLocation()
+  const [pageOpen, setPageOpen] = useState(false)
+  const [pageInput, setPageInput] = useState('')
+  const pageBtnRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!pageOpen) return
+    const popup = pageBtnRef.current?.closest('.relative')?.querySelector('.absolute')
+    if (!popup) return
+    const handler = (e: MouseEvent) => {
+      if (!pageBtnRef.current?.contains(e.target as Node) && !popup.contains(e.target as Node)) setPageOpen(false)
+    }
+    setTimeout(() => document.addEventListener('click', handler), 0)
+    return () => document.removeEventListener('click', handler)
+  }, [pageOpen])
   const isThread = loc.pathname.startsWith('/t/')
   const tid = isThread ? loc.pathname.split('/')[2] : ''
   const poOnly = loc.search.includes('po=1')
@@ -66,17 +80,36 @@ export default function NavBar() {
               className={`flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] transition-all ${poOnly ? 'bg-accent text-accent-foreground' : 'text-muted hover:bg-default-100'}`}>
               <Eye size={12} />PO
             </button>
-            <Button isIconOnly variant="ghost" size="sm" isDisabled={currentPage <= 1}
-              onPress={() => setJumpToPage(Math.max(1, currentPage - 1))} aria-label="上一页">
-              <ChevronLeft size={14} />
-            </Button>
-            <span className="text-[11px] text-muted px-0.5 select-none min-w-[40px] text-center tabular-nums">
-              {currentPage}/{totalPages}
-            </span>
-            <Button isIconOnly variant="ghost" size="sm" isDisabled={currentPage >= totalPages}
-              onPress={() => setJumpToPage(Math.min(totalPages, currentPage + 1))} aria-label="下一页">
-              <ChevronRight size={14} />
-            </Button>
+            <div className="relative">
+              <button ref={pageBtnRef} onClick={() => { setPageOpen(p => !p); setPageInput(String(currentPage)) }}
+                className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] text-muted hover:bg-default-100 transition-colors">
+                <FileText size={12} />
+                <span className="tabular-nums">{currentPage}/{totalPages}</span>
+              </button>
+              {pageOpen && (
+                <div className="absolute top-full right-0 mt-1 z-50 bg-background border border-divider rounded-xl shadow-lg p-3 min-w-[160px]"
+                  onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center gap-1 mb-2">
+                    <Button isIconOnly variant="ghost" size="sm" isDisabled={currentPage <= 1}
+                      onPress={() => setJumpToPage(Math.max(1, currentPage - 1))} aria-label="上一页">
+                      <ChevronLeft size={14} />
+                    </Button>
+                    <input type="number" min={1} max={totalPages} value={pageInput}
+                      onChange={e => setPageInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { const p = Math.max(1, Math.min(totalPages, Number(pageInput) || 1)); setJumpToPage(p); setPageOpen(false) } }}
+                      className="w-16 text-center text-sm bg-default-100 rounded-lg px-2 py-1 text-foreground outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none mx-1" />
+                    <Button isIconOnly variant="ghost" size="sm" isDisabled={currentPage >= totalPages}
+                      onPress={() => setJumpToPage(Math.min(totalPages, currentPage + 1))} aria-label="下一页">
+                      <ChevronRight size={14} />
+                    </Button>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" className="flex-1 text-xs" onPress={() => { setJumpToPage(1); setPageOpen(false) }}>首页</Button>
+                    <Button size="sm" variant="ghost" className="flex-1 text-xs" onPress={() => { setJumpToPage(totalPages); setPageOpen(false) }}>末页</Button>
+                  </div>
+                </div>
+              )}
+            </div>
             <Button isIconOnly variant="ghost" size="sm"
               onPress={() => fav ? removeFavorite(tid) : addFavorite({ id: tid, title: threadTitle, forumName: '', forumId: '', preview: '', img: '', ext: '', replyCount: 0 })}
               aria-label={fav ? '取消收藏' : '收藏'}

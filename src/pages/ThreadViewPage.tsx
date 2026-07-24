@@ -1,16 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { Reply } from 'lucide-react'
+import { Reply, Loader2 } from 'lucide-react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { useInfiniteThread, useReplyThread } from '../hooks/useApi'
+import { useQueryClient } from '@tanstack/react-query'
+import { getThread } from '../api/client'
 import PostItem from '../components/PostItem'
 import ReferencePopup from '../components/ReferencePopup'
 import { ListSkeleton } from '../components/Skeleton'
-import { useSettingsStore } from '../store/settings'
 import { useThreadViewStore } from '../store/threadView'
 import { useFavoritesStore } from '../store/favorites'
 import { useHistoryStore } from '../store/history'
 import { stripHtml, truncateText } from '../hooks/useUtils'
 import type { Post } from '../types/api'
+
+const PAGE_SIZE = 19
+const ITEM_HEIGHT = 85
 
 export default function ThreadViewPage() {
   const { id: rawId } = useParams<{ id: string }>()
@@ -23,21 +28,66 @@ export default function ThreadViewPage() {
   const setReplyTo = useThreadViewStore(s => s.setReplyTo)
   const [replyContent, setReplyContent] = useState('')
   const [toast, setToast] = useState('')
-  const { autoLoadNext } = useSettingsStore()
   const { updateReplyCount } = useFavoritesStore()
   const { setCurrentPage, setTotalPages, setJumpToPage, setThreadTitle } = useThreadViewStore()
   const { addHistory } = useHistoryStore()
   const replyMutation = useReplyThread()
+  const queryClient = useQueryClient()
+  const listRef = useRef<HTMLDivElement>(null)
 
-  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error, refetch } = useInfiniteThread(tid)
+  const { data, isLoading, isFetchingNextPage, isFetchingPreviousPage, fetchNextPage, fetchPreviousPage, hasNextPage, hasPreviousPage, error, refetch } = useInfiniteThread(tid)
+
   const thread = data?.pages[0]
   const total = Number(thread?.ReplyCount || 0)
-  const allReplies = data?.pages.flatMap(p => p.Replies || []) ?? []
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const poHash = thread?.user_hash
+  const allReplies = data?.pages.flatMap(p => p.Replies || []) ?? []
+  const displayed = allReplies.filter(r => !poOnly || r.user_hash === poHash)
 
-  const loadedPages = data?.pages.length || 0
-  const repliesPerPage = data?.pages[0]?.Replies?.length || 20
-  const totalPages = Math.max(1, Math.ceil(total / repliesPerPage))
+  const virtualizer = useVirtualizer({
+    count: displayed.length,
+    getScrollElement: () => document.getElementById('main-scroll-container'),
+    estimateSize: () => ITEM_HEIGHT,
+    overscan: 8,
+  })
+
+  useEffect(() => {
+    if (data) {
+      setCurrentPage(data.pages.length)
+      setTotalPages(totalPages)
+    }
+  }, [data?.pages.length, totalPages])
+
+  const jumpTarget = useThreadViewStore(s => s.jumpToPage)
+  useEffect(() => {
+    if (jumpTarget <= 0) return
+    setCurrentPage(jumpTarget)
+    setJumpToPage(0)
+    ;(async () => {
+      const pageData = await getThread(tid, jumpTarget)
+      queryClient.setQueryData(['thread', tid], {
+        pages: [pageData],
+        pageParams: [jumpTarget],
+      })
+    })()
+    const el = document.getElementById('main-scroll-container')
+    el?.scrollTo({ top: 0 })
+  }, [jumpTarget])
+
+  useEffect(() => {
+    const el = document.getElementById('main-scroll-container')
+    if (!el) return
+    const handler = () => {
+      if (el.scrollTop < 200 && hasPreviousPage && !isFetchingPreviousPage) {
+        fetchPreviousPage()
+      }
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 400 && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage()
+      }
+    }
+    el.addEventListener('scroll', handler, { passive: true })
+    return () => el.removeEventListener('scroll', handler)
+  }, [hasNextPage, hasPreviousPage, isFetchingNextPage, isFetchingPreviousPage, fetchNextPage, fetchPreviousPage])
 
   useEffect(() => {
     if (thread) {
@@ -46,33 +96,6 @@ export default function ThreadViewPage() {
       setThreadTitle(thread.title || '无标题')
     }
   }, [!!thread])
-
-  useEffect(() => {
-    setCurrentPage(loadedPages)
-    setTotalPages(totalPages)
-  }, [loadedPages, totalPages])
-
-  const jumpToPage = useThreadViewStore(s => s.jumpToPage)
-  useEffect(() => {
-    if (jumpToPage <= 0) return
-    if (loadedPages < jumpToPage && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage()
-    } else if (loadedPages >= jumpToPage) {
-      setCurrentPage(jumpToPage)
-      setJumpToPage(0)
-      const el = document.getElementById('main-scroll-container')
-      el?.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-  }, [jumpToPage, loadedPages, hasNextPage, isFetchingNextPage, fetchNextPage])
-
-  useEffect(() => {
-    if (!autoLoadNext || !hasNextPage || isFetchingNextPage) return
-    const el = document.getElementById('main-scroll-container')
-    if (!el) return
-    const h = () => { if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) fetchNextPage() }
-    el.addEventListener('scroll', h, { passive: true })
-    return () => el.removeEventListener('scroll', h)
-  }, [autoLoadNext, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const handleQuote = (pid: string) => {
     const setReferencePostId = useThreadViewStore.getState().setReferencePostId
@@ -90,34 +113,58 @@ export default function ThreadViewPage() {
     } catch { setToast('回复失败'); setTimeout(() => setToast(''), 2000) }
   }
 
-  const displayed = allReplies.filter(r => !poOnly || r.user_hash === poHash)
-
   if (isLoading && !thread) return <div className="page-enter"><ListSkeleton count={6} /></div>
-  if (error) return <div className="page-enter flex flex-col items-center justify-center py-20"><p className="text-danger text-sm mb-4">加载失败</p><button onClick={() => refetch()} className="px-4 py-2 text-sm bg-accent text-accent-foreground rounded-xl">重试</button></div>
+  if (error && !thread) return (
+    <div className="page-enter flex flex-col items-center justify-center py-20">
+      <p className="text-danger text-sm mb-4">加载失败</p>
+      <button onClick={() => refetch()} className="px-4 py-2 text-sm bg-accent text-accent-foreground rounded-xl">重试</button>
+    </div>
+  )
   if (!thread) return null
+
+  const loading = isFetchingPreviousPage || isFetchingNextPage
+  const virtualItems = virtualizer.getVirtualItems()
 
   return (
     <div className="min-h-full page-enter pb-4">
       <div data-pid={thread.id}>
-        <PostItem post={thread as Post} isPo onQuoteClick={handleQuote} onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} />
+        <PostItem post={thread as Post} isPo onQuoteClick={handleQuote}
+          onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} />
       </div>
-      <div className="border-t-2 border-default-200 dark:border-default-700">
-        {displayed.map(r => <div key={r.id} data-pid={r.id}><PostItem post={r} poHash={poHash} onQuoteClick={handleQuote} onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} /></div>)}
+      <div className="border-t-2 border-default-200 dark:border-default-700" ref={listRef}>
+        <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+          {virtualItems.map(virtualItem => {
+            const reply = displayed[virtualItem.index]
+            return (
+              <div key={reply.id} data-pid={reply.id}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualItem.start}px)`,
+                }}>
+                <PostItem post={reply} poHash={poHash} onQuoteClick={handleQuote}
+                  onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} />
+              </div>
+            )
+          })}
+        </div>
         <div className="p-4 text-center text-sm text-muted">
-          {isFetchingNextPage ? '加载中…' : !hasNextPage && total > 0 ? `— 共 ${total} 条回复 —` : !autoLoadNext && hasNextPage ? (
-            <button onClick={() => fetchNextPage()} className="px-4 py-2 text-sm bg-accent text-accent-foreground rounded-xl hover:opacity-90 transition-all active:scale-95">加载更多回复</button>
+          {loading ? (
+            <span className="inline-flex items-center gap-1.5"><Loader2 size={14} className="animate-spin" />加载中…</span>
+          ) : total > 0 ? (
+            `— 共 ${total} 条回复 —`
           ) : null}
         </div>
       </div>
 
-      {/* toast */}
       {toast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-xl text-sm font-medium bg-foreground/95 text-background shadow-lg animate-[fadeSlideIn_.2s_ease-out] pointer-events-none">
           {toast}
         </div>
       )}
 
-      {/* reply popup */}
       {replyOpen && (
         <div className="fixed inset-0 z-50 flex flex-col" onClick={() => setReplyOpen(false)}>
           <div className="absolute inset-0 bg-black/30" />
