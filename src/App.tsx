@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { SearchX } from 'lucide-react'
 import NavBar from './components/NavBar'
@@ -13,9 +13,10 @@ import SettingsPage from './pages/SettingsPage'
 
 function App() {
   const location = useLocation()
+  const mainRef = useRef<HTMLElement>(null)
 
-  useEffect(() => {
-    document.querySelector('main')?.scrollTo(0, 0)
+  useLayoutEffect(() => {
+    mainRef.current?.scrollTo(0, 0)
   }, [location.pathname])
 
   const getActiveTab = () => {
@@ -33,7 +34,7 @@ function App() {
     <div className="h-screen flex flex-col">
       <NavBar />
       <div className="flex-1 overflow-hidden">
-        <main className="h-full overflow-y-auto scrollbar-none pb-[52px]">
+        <main ref={mainRef} className="h-full overflow-y-auto scrollbar-none pb-[52px]">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/f/:id" element={<ForumViewPage />} />
