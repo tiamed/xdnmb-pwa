@@ -5,6 +5,7 @@ import { useFavoritesStore } from '../store/favorites'
 import { Button, Chip } from '@heroui/react'
 import { Sun, Moon, Monitor, Minus, Plus, RefreshCw } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { useQueryClient } from '@tanstack/react-query'
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
@@ -14,6 +15,7 @@ export default function SettingsPage() {
     feedUuid, setFeedUuid, userHash, setUserHash,
   } = useSettingsStore()
   const { syncFromFeed } = useFavoritesStore()
+  const queryClient = useQueryClient()
 
   const [apiUrl, setApiUrl] = useState(getApiBaseUrl())
   const [hashInput, setHashInput] = useState(userHash)
@@ -29,20 +31,23 @@ export default function SettingsPage() {
     setSyncing(true)
     setSyncMsg('同步中…')
     try {
-      let count = 0
-      for (let page = 1; ; page++) {
-        const items = await getFeed(uuid, page)
-        if (items.length === 0) break
-        for (const item of items) {
-          syncFromFeed({
-            id: item.id, title: item.title || '无标题', forumName: '',
-            forumId: item.fid, preview: item.content,
-            img: item.img, ext: item.ext, replyCount: Number(item.reply_count || 0),
-          })
-          count++
-        }
+      const data = await queryClient.fetchInfiniteQuery({
+        queryKey: ['feed', uuid],
+        queryFn: ({ pageParam }) => getFeed(uuid, pageParam),
+        initialPageParam: 1,
+        pages: 9999,
+        getNextPageParam: (lastPage, _all, lastPageParam) =>
+          lastPage.length > 0 ? lastPageParam + 1 : undefined,
+      })
+      const allItems = data.pages.flat()
+      for (const item of allItems) {
+        syncFromFeed({
+          id: item.id, title: item.title || '无标题', forumName: '',
+          forumId: item.fid, preview: item.content,
+          img: item.img, ext: item.ext, replyCount: Number(item.reply_count || 0),
+        })
       }
-      setSyncMsg(`已同步 ${count} 个订阅`)
+      setSyncMsg(`已同步 ${allItems.length} 个订阅`)
       setTimeout(() => setSyncMsg(''), 3000)
     } catch {
       setSyncMsg('同步失败，请检查 UUID 是否正确')

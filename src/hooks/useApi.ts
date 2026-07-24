@@ -95,13 +95,16 @@ export function useReference(postId: string) {
   })
 }
 
-// 订阅列表
-export function useFeed(feedId: string, page = 1) {
-  return useQuery({
-    queryKey: ['feed', feedId, page],
-    queryFn: () => getFeed(feedId, page),
-    staleTime: 1000 * 30,
+// 订阅列表 - infinite
+export function useInfiniteFeed(feedId: string) {
+  return useInfiniteQuery({
+    queryKey: ['feed', feedId],
+    queryFn: ({ pageParam }) => getFeed(feedId, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, _all, lastPageParam) =>
+      lastPage.length > 0 ? lastPageParam + 1 : undefined,
     enabled: !!feedId,
+    staleTime: 1000 * 30,
   })
 }
 
