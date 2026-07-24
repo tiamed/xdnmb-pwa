@@ -16,9 +16,11 @@ export default function TimelinePage() {
 
   useEffect(() => {
     if (!autoLoadNext || !hasNextPage || isFetchingNextPage) return
-    const h = () => { if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 200) fetchNextPage() }
-    window.addEventListener('scroll', h, { passive: true })
-    return () => window.removeEventListener('scroll', h)
+    const el = document.getElementById('main-scroll-container')
+    if (!el) return
+    const h = () => { if (el.scrollTop + el.clientHeight >= el.scrollHeight - 200) fetchNextPage() }
+    el.addEventListener('scroll', h, { passive: true })
+    return () => el.removeEventListener('scroll', h)
   }, [autoLoadNext, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   if (error) return <div className="py-20 text-center text-danger text-sm">加载失败</div>

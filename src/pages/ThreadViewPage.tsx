@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { Reply } from 'lucide-react'
+import { Reply, Star } from 'lucide-react'
 import { useInfiniteThread, useReplyThread } from '../hooks/useApi'
 import PostItem from '../components/PostItem'
 import ReferencePopup from '../components/ReferencePopup'
@@ -24,7 +24,7 @@ export default function ThreadViewPage() {
   const [replyContent, setReplyContent] = useState('')
   const [toast, setToast] = useState('')
   const { replySort, autoLoadNext } = useSettingsStore()
-  const { updateReplyCount } = useFavoritesStore()
+  const { isFavorite, addFavorite, removeFavorite, updateReplyCount } = useFavoritesStore()
   const { addHistory } = useHistoryStore()
   const replyMutation = useReplyThread()
 
@@ -33,6 +33,7 @@ export default function ThreadViewPage() {
   const total = Number(thread?.ReplyCount || 0)
   const allReplies = data?.pages.flatMap(p => p.Replies || []) ?? []
   const poHash = thread?.user_hash
+  const fav = isFavorite(tid)
 
   useEffect(() => {
     if (thread) {
@@ -43,9 +44,11 @@ export default function ThreadViewPage() {
 
   useEffect(() => {
     if (!autoLoadNext || !hasNextPage || isFetchingNextPage) return
-    const h = () => { if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 300) fetchNextPage() }
-    window.addEventListener('scroll', h, { passive: true })
-    return () => window.removeEventListener('scroll', h)
+    const el = document.getElementById('main-scroll-container')
+    if (!el) return
+    const h = () => { if (el.scrollTop + el.clientHeight >= el.scrollHeight - 300) fetchNextPage() }
+    el.addEventListener('scroll', h, { passive: true })
+    return () => el.removeEventListener('scroll', h)
   }, [autoLoadNext, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const handleQuote = (pid: string) => {
@@ -72,7 +75,17 @@ export default function ThreadViewPage() {
 
   return (
     <div className="min-h-full page-enter pb-4">
-      <div data-pid={thread.id}><PostItem post={thread as Post} isPo onQuoteClick={handleQuote} onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} /></div>
+      <div data-pid={thread.id}>
+        <PostItem post={thread as Post} isPo onQuoteClick={handleQuote} onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} />
+        <div className="flex items-center justify-end px-3 py-1.5 gap-1 border-b border-divider">
+          <button onClick={() => fav ? removeFavorite(tid) : addFavorite({ id: tid, title: thread.title || '无标题', forumName: '', forumId: thread.fid || '', preview: truncateText(stripHtml(thread.content), 100), img: thread.img, ext: thread.ext, replyCount: total })}
+            className="flex items-center gap-1 text-xs transition-colors"
+            style={{ color: fav ? 'var(--color-warning)' : 'var(--color-muted)' }}>
+            <Star size={14} fill={fav ? 'currentColor' : 'none'} />
+            {fav ? '已收藏' : '收藏'}
+          </button>
+        </div>
+      </div>
       <div className="border-t-2 border-default-200 dark:border-default-700">
         {displayed.map(r => <div key={r.id} data-pid={r.id}><PostItem post={r} poHash={poHash} onQuoteClick={handleQuote} onReply={id => { setReplyTo(id); setReplyContent(`>>No.${id}\n`); setReplyOpen(true) }} /></div>)}
         <div className="p-4 text-center text-sm text-muted">
