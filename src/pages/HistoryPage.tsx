@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { Clock, Trash2 } from 'lucide-react'
 import { useHistoryStore } from '../store/history'
 import ThreadCard from '../components/ThreadCard'
 import type { ForumThread } from '../types/api'
@@ -41,8 +42,9 @@ export default function HistoryPage() {
                 clearHistory()
               }
             }}
-            className="text-sm text-red-500 hover:text-red-600"
+            className="text-sm text-red-500 hover:text-red-600 flex items-center gap-1"
           >
+            <Trash2 size={14} />
             清空
           </button>
         )}
@@ -50,7 +52,7 @@ export default function HistoryPage() {
 
       {items.length === 0 ? (
         <div className="p-12 text-center text-gray-400">
-          <p className="text-4xl mb-2">📜</p>
+          <Clock size={48} className="mx-auto mb-3 opacity-50" />
           <p>还没有浏览记录</p>
         </div>
       ) : (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Menu, X, Home, Palette, BookOpen, Code, Film, Laugh } from 'lucide-react'
 import { useForumList } from '../hooks/useApi'
 import ForumList from '../components/ForumList'
 import { useSettingsStore } from '../store/settings'
@@ -35,12 +36,12 @@ export default function HomePage() {
   }
 
   const popularForums = [
-    { id: '4', name: '综合版1', icon: '🏠' },
-    { id: '7', name: '欢乐恶搞', icon: '😂' },
-    { id: '11', name: '绘画', icon: '🎨' },
-    { id: '15', name: '故事', icon: '📖' },
-    { id: '25', name: '技术宅', icon: '💻' },
-    { id: '36', name: '动画综合', icon: '🎬' },
+    { id: '4', name: '综合版1', Icon: Home },
+    { id: '7', name: '欢乐恶搞', Icon: Laugh },
+    { id: '11', name: '绘画', Icon: Palette },
+    { id: '15', name: '故事', Icon: BookOpen },
+    { id: '25', name: '技术宅', Icon: Code },
+    { id: '36', name: '动画综合', Icon: Film },
   ]
 
   return (
@@ -65,8 +66,9 @@ export default function HomePage() {
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="p-1 text-gray-500"
+                aria-label="关闭"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
             <ForumList onSelect={() => setSidebarOpen(false)} />
@@ -80,9 +82,11 @@ export default function HomePage() {
         <div className="md:hidden flex items-center px-3 py-3 border-b border-gray-200 dark:border-gray-700 sticky top-14 z-30 bg-white dark:bg-[#16171d]">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 text-gray-600 dark:text-gray-400 -ml-2"
+            className="p-2 text-gray-600 dark:text-gray-400 -ml-2 flex items-center gap-2"
+            aria-label="打开菜单"
           >
-            ☰ 版块
+            <Menu size={20} />
+            版块
           </button>
         </div>
 
@@ -102,15 +106,15 @@ export default function HomePage() {
               热门版块
             </h2>
             <div className="grid grid-cols-3 gap-2">
-              {popularForums.map((forum) => (
+              {popularForums.map(({ id, name, Icon }) => (
                 <button
-                  key={forum.id}
-                  onClick={() => handleQuickForum(forum.id)}
-                  className="flex flex-col items-center gap-1 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  key={id}
+                  onClick={() => handleQuickForum(id)}
+                  className="flex flex-col items-center gap-1.5 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <span className="text-2xl">{forum.icon}</span>
+                  <Icon size={24} className="text-purple-500" />
                   <span className="text-xs text-gray-700 dark:text-gray-300 truncate w-full text-center">
-                    {forum.name}
+                    {name}
                   </span>
                 </button>
               ))}

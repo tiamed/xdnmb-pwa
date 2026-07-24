@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { Star, Trash2 } from 'lucide-react'
 import { useFavoritesStore } from '../store/favorites'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import ThreadCard from '../components/ThreadCard'
@@ -43,8 +44,9 @@ export default function FavoritesPage() {
                 clearFavorites()
               }
             }}
-            className="text-sm text-red-500 hover:text-red-600"
+            className="text-sm text-red-500 hover:text-red-600 flex items-center gap-1"
           >
+            <Trash2 size={14} />
             清空
           </button>
         )}
@@ -52,7 +54,7 @@ export default function FavoritesPage() {
 
       {items.length === 0 ? (
         <div className="p-12 text-center text-gray-400">
-          <p className="text-4xl mb-2">⭐</p>
+          <Star size={48} className="mx-auto mb-3 opacity-50" />
           <p>还没有收藏的串</p>
           <p className="text-sm mt-1">点击串卡片上的星号添加收藏</p>
         </div>

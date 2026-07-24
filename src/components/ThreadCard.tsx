@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Star } from 'lucide-react'
 import { getImageUrl } from '../api/client'
 import type { ForumThread } from '../types/api'
 import { stripHtml, truncateText, formatTime } from '../hooks/useUtils'
@@ -100,10 +101,11 @@ export default function ThreadCard({ thread, forumName }: ThreadCardProps) {
             </div>
             <button
               onClick={handleFavClick}
-              className={`flex-shrink-0 text-lg ${fav ? 'text-yellow-500' : 'text-gray-300 dark:text-gray-600 hover:text-yellow-400'}`}
+              className={`flex-shrink-0 ${fav ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300 dark:text-gray-600 hover:text-yellow-400'}`}
               title={fav ? '取消收藏' : '收藏'}
+              aria-label={fav ? '取消收藏' : '收藏'}
             >
-              {fav ? '★' : '☆'}
+              <Star size={18} fill={fav ? 'currentColor' : 'none'} />
             </button>
           </div>
 

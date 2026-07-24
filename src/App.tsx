@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
+import { SearchX } from 'lucide-react'
 import NavBar from './components/NavBar'
 import BottomNav from './components/BottomNav'
 import HomePage from './pages/HomePage'
@@ -50,7 +51,7 @@ function App() {
 function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-      <p className="text-4xl mb-4">🔍</p>
+      <SearchX size={48} className="mb-4 text-gray-400" />
       <p className="text-gray-500 dark:text-gray-400">页面不存在</p>
     </div>
   )

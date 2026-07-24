@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import { Star, ArrowUpDown, Eye } from 'lucide-react'
 import { useThread, useReplyThread } from '../hooks/useApi'
 import PostItem from '../components/PostItem'
 import { useSettingsStore } from '../store/settings'
@@ -182,15 +183,16 @@ export default function ThreadViewPage() {
     <div className="min-h-full pb-20">
       {/* 工具栏 */}
       <div className="sticky top-14 z-30 bg-white dark:bg-[#16171d] border-b border-gray-200 dark:border-gray-700 px-3 py-2 flex items-center justify-between text-sm">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setPoOnly(!poOnly)}
-            className={`px-2 py-1 rounded ${
+            className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs ${
               poOnly
                 ? 'bg-purple-500 text-white'
                 : 'text-gray-600 dark:text-gray-400'
             }`}
           >
+            <Eye size={14} />
             只看PO
           </button>
           <button
@@ -199,9 +201,10 @@ export default function ThreadViewPage() {
                 .getState()
                 .setReplySort(replySort === 'asc' ? 'desc' : 'asc')
             }
-            className="text-gray-600 dark:text-gray-400"
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
-            {replySort === 'asc' ? '↑ 正序' : '↓ 倒序'}
+            <ArrowUpDown size={14} />
+            {replySort === 'asc' ? '正序' : '倒序'}
           </button>
         </div>
         <div className="flex items-center gap-3">
@@ -210,9 +213,12 @@ export default function ThreadViewPage() {
           </span>
           <button
             onClick={toggleFavorite}
-            className={isFav ? 'text-yellow-500' : 'text-gray-400'}
+            className={`flex items-center gap-1 text-xs ${
+              isFav ? 'text-yellow-500' : 'text-gray-400'
+            }`}
           >
-            {isFav ? '★' : '☆'} 收藏
+            <Star size={16} fill={isFav ? 'currentColor' : 'none'} />
+            收藏
           </button>
         </div>
       </div>

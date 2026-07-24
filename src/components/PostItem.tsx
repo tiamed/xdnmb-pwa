@@ -61,7 +61,7 @@ export default function PostItem({
     if (!showSpoiler) {
       html = html.replace(
         /\[h\]([\s\S]*?)\[\/h\]/g,
-        '<span class="spoiler bg-gray-800 text-gray-800 dark:bg-black dark:text-black cursor-pointer select-none rounded px-0.5">⚠️ 隐藏内容，点击查看</span>',
+        '<span class="spoiler bg-gray-800 text-gray-800 dark:bg-black dark:text-black cursor-pointer select-none rounded px-1 text-xs">隐藏内容</span>',
       )
     }
     return { __html: html }
