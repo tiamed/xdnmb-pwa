@@ -31,7 +31,7 @@ export default function NavBar() {
   const ThemeIcon = !mounted ? Sun : theme === 'light' ? Sun : theme === 'dark' ? Moon : Monitor
 
   return (
-    <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-divider">
+    <header className="shrink-0 z-40 bg-background/90 backdrop-blur-md border-b border-divider">
       <div className="flex items-center h-12 px-2 gap-1 max-w-3xl mx-auto w-full">
         {isDetail && (
           <Button isIconOnly variant="ghost" size="sm" onPress={() => nav(-1)} aria-label="返回">

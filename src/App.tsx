@@ -31,27 +31,25 @@ function App() {
   const showBottomNav = !location.pathname.startsWith('/t/')
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-dvh flex flex-col">
       <NavBar />
-      <div className="flex-1 overflow-hidden">
-        <main ref={mainRef} className="h-full overflow-y-auto scrollbar-none pb-[52px]">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/f/:id" element={<ForumViewPage />} />
-            <Route path="/t/:id" element={<ThreadViewPage />} />
-            <Route path="/timeline/:id" element={<TimelinePage />} />
-            <Route path="/favorites" element={<FavoritesPage />} />
-            <Route path="/history" element={<HistoryPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={
-              <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                <SearchX size={48} className="mb-4 text-default-300" />
-                <p className="text-default-500">页面不存在</p>
-              </div>
-            } />
-          </Routes>
-        </main>
-      </div>
+      <main ref={mainRef} className="flex-1 min-h-0 overflow-y-auto scrollbar-none pb-[52px]">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/f/:id" element={<ForumViewPage />} />
+          <Route path="/t/:id" element={<ThreadViewPage />} />
+          <Route path="/timeline/:id" element={<TimelinePage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+              <SearchX size={48} className="mb-4 text-default-300" />
+              <p className="text-default-500">页面不存在</p>
+            </div>
+          } />
+        </Routes>
+      </main>
       {showBottomNav && <BottomNav activeTab={getActiveTab()} />}
     </div>
   )

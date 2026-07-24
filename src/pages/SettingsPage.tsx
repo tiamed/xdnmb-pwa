@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useSettingsStore, type ImageMode, type ReplySort } from '../store/settings'
 import { getApiBaseUrl, setApiBase, getFeed } from '../api/client'
 import { useFavoritesStore } from '../store/favorites'
-import { Button, Chip } from '@heroui/react'
+import { Button } from '@heroui/react'
 import { Sun, Moon, Monitor, Minus, Plus, RefreshCw } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useQueryClient } from '@tanstack/react-query'
@@ -21,7 +21,7 @@ export default function SettingsPage() {
   const [hashInput, setHashInput] = useState(userHash)
   const [uuidInput, setUuidInput] = useState(feedUuid)
   const [syncing, setSyncing] = useState(false)
-  const [syncMsg, setSyncMsg] = useState('')
+  const [toast, setToast] = useState('')
 
   const handleSaveUuid = async () => {
     const uuid = uuidInput.trim()
@@ -29,7 +29,6 @@ export default function SettingsPage() {
     if (!uuid) return
 
     setSyncing(true)
-    setSyncMsg('同步中…')
     try {
       const data = await queryClient.fetchInfiniteQuery({
         queryKey: ['feed', uuid],
@@ -47,11 +46,11 @@ export default function SettingsPage() {
           img: item.img, ext: item.ext, replyCount: Number(item.reply_count || 0),
         })
       }
-      setSyncMsg(`已同步 ${allItems.length} 个订阅`)
-      setTimeout(() => setSyncMsg(''), 3000)
+      setToast(`已同步 ${allItems.length} 个订阅`)
+      setTimeout(() => setToast(''), 2500)
     } catch {
-      setSyncMsg('同步失败，请检查 UUID 是否正确')
-      setTimeout(() => setSyncMsg(''), 3000)
+      setToast('同步失败，请检查 UUID 是否正确')
+      setTimeout(() => setToast(''), 2500)
     } finally {
       setSyncing(false)
     }
@@ -135,13 +134,6 @@ export default function SettingsPage() {
               {syncing ? '同步中…' : '同步'}
             </Button>
           </div>
-          {syncMsg && (
-            <div className="px-4 pb-2">
-              <Chip size="sm" variant="soft" color={syncMsg.includes('失败') ? 'danger' : 'success'} className="text-xs">
-                {syncMsg}
-              </Chip>
-            </div>
-          )}
         </Row>
       </Section>
 
@@ -149,6 +141,12 @@ export default function SettingsPage() {
         <Row label="版本"><span className="text-sm text-muted">1.0.0</span></Row>
         <Row label="技术栈"><span className="text-sm text-muted">React + Vite + HeroUI + PWA</span></Row>
       </Section>
+
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-xl text-sm font-medium text-white bg-default-900/90 dark:bg-default-100/90 dark:text-default-900 animate-[fadeSlideIn_.2s_ease-out] shadow-lg pointer-events-none">
+          {toast}
+        </div>
+      )}
     </div>
   )
 }
