@@ -12,11 +12,12 @@ export default function FavoritesPage() {
   const { items } = useFavoritesStore()
   const searchMode = sp.get('search') === '1'
   const [searchQuery, setSearchQuery] = useState('')
+  const q = searchQuery.toLowerCase()
 
   const filtered = items
     .slice()
     .reverse()
-    .filter(i => !searchQuery || i.title.toLowerCase().includes(searchQuery.toLowerCase()) || stripHtml(i.preview).toLowerCase().includes(searchQuery.toLowerCase()) || i.id.includes(searchQuery))
+    .filter(i => !q || (i.title || '').toLowerCase().includes(q) || (i.preview || '').toLowerCase().includes(q) || (i.id || '').includes(q))
 
   const threads: ForumThread[] = filtered.map(i => ({
     id: i.id, fid: i.forumId, ReplyCount: String(i.lastReplyCount ?? i.replyCount), img: i.img, ext: i.ext,

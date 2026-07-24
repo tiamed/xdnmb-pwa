@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Clock, X, Search as SearchIcon, Trash2 } from 'lucide-react'
 import { Chip } from '@heroui/react'
 import { useHistoryStore } from '../store/history'
-import { stripHtml } from '../hooks/useUtils'
+
 
 export default function HistoryPage() {
   const nav = useNavigate()
@@ -15,7 +15,7 @@ export default function HistoryPage() {
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const q = searchQuery.toLowerCase()
-  const filtered = items.filter(i => !searchQuery || (i.title || '').toLowerCase().includes(q) || (stripHtml(i.preview) || '').toLowerCase().includes(q) || (i.id || '').includes(searchQuery) || (i.forumName || '').toLowerCase().includes(q))
+  const filtered = items.filter(i => !q || (i.title || '').toLowerCase().includes(q) || (i.preview || '').toLowerCase().includes(q) || (i.id || '').includes(q) || (i.forumName || '').toLowerCase().includes(q))
 
   const closeSearch = () => {
     setSp({})
