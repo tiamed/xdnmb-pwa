@@ -5,6 +5,12 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 export type ImageMode = 'default' | 'hidden' | 'blur'
 export type ReplySort = 'asc' | 'desc'
 
+export interface UserCookie {
+  id: string
+  label: string
+  hash: string
+}
+
 interface SettingsState {
   theme: ThemeMode
   imageMode: ImageMode
@@ -13,7 +19,8 @@ interface SettingsState {
   showSpoiler: boolean
   fontSize: number
   feedUuid: string
-  userHash: string
+  cookies: UserCookie[]
+  activeCookieId: string | null
   setTheme: (theme: ThemeMode) => void
   setImageMode: (mode: ImageMode) => void
   setReplySort: (sort: ReplySort) => void
@@ -21,9 +28,14 @@ interface SettingsState {
   setShowSpoiler: (v: boolean) => void
   setFontSize: (size: number) => void
   setFeedUuid: (uuid: string) => void
-  setUserHash: (hash: string) => void
+  addCookie: (label: string, hash: string) => void
+  updateCookie: (id: string, patch: Partial<Omit<UserCookie, 'id'>>) => void
+  removeCookie: (id: string) => void
+  setActiveCookie: (id: string | null) => void
   applyTheme: () => void
 }
+
+const genId = () => Math.random().toString(36).slice(2, 10)
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
@@ -35,8 +47,8 @@ export const useSettingsStore = create<SettingsState>()(
       showSpoiler: false,
       fontSize: 16,
       feedUuid: '',
-      userHash: '',
-      proxyUrl: '',
+      cookies: [],
+      activeCookieId: null,
 
       setTheme: (theme) => {
         set({ theme })
@@ -48,7 +60,25 @@ export const useSettingsStore = create<SettingsState>()(
       setShowSpoiler: (showSpoiler) => set({ showSpoiler }),
       setFontSize: (fontSize) => set({ fontSize }),
       setFeedUuid: (feedUuid) => set({ feedUuid }),
-      setUserHash: (userHash) => set({ userHash }),
+
+      addCookie: (label, hash) => set((s) => {
+        const c: UserCookie = {
+          id: genId(),
+          label: (label || '').trim() || `Cookie ${s.cookies.length + 1}`,
+          hash: (hash || '').trim(),
+        }
+        const cookies = [...s.cookies, c]
+        return { cookies, activeCookieId: s.activeCookieId ?? c.id }
+      }),
+      updateCookie: (id, patch) => set((s) => ({
+        cookies: s.cookies.map((c) => (c.id === id ? { ...c, ...patch, hash: patch.hash !== undefined ? patch.hash.trim() : c.hash } : c)),
+      })),
+      removeCookie: (id) => set((s) => {
+        const cookies = s.cookies.filter((c) => c.id !== id)
+        const activeCookieId = s.activeCookieId === id ? (cookies[0]?.id ?? null) : s.activeCookieId
+        return { cookies, activeCookieId }
+      }),
+      setActiveCookie: (activeCookieId) => set({ activeCookieId }),
 
       applyTheme: () => {
         const { theme } = get()
@@ -61,6 +91,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'nmb-settings',
+      version: 2,
       partialize: (state) => ({
         theme: state.theme,
         imageMode: state.imageMode,
@@ -69,8 +100,24 @@ export const useSettingsStore = create<SettingsState>()(
         showSpoiler: state.showSpoiler,
         fontSize: state.fontSize,
         feedUuid: state.feedUuid,
-        userHash: state.userHash,
+        cookies: state.cookies,
+        activeCookieId: state.activeCookieId,
       }),
+      migrate: (persisted: any, version: number) => {
+        if (!persisted) return {}
+        if (version < 2 && typeof persisted.userHash === 'string' && persisted.userHash.trim()) {
+          const c: UserCookie = { id: genId(), label: '默认', hash: persisted.userHash.trim() }
+          return { ...persisted, cookies: [c], activeCookieId: c.id, userHash: undefined }
+        }
+        return persisted
+      },
     },
   ),
 )
+
+export function getActiveUserHash(): string {
+  const s = useSettingsStore.getState()
+  if (!s.activeCookieId) return ''
+  const c = s.cookies.find((c) => c.id === s.activeCookieId)
+  return c?.hash ?? ''
+}
