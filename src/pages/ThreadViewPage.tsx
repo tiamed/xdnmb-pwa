@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import { Reply } from 'lucide-react'
 import { useInfiniteThread, useReplyThread } from '../hooks/useApi'
 import PostItem from '../components/PostItem'
+import ReferencePopup from '../components/ReferencePopup'
 import { ListSkeleton } from '../components/Skeleton'
 import { useSettingsStore } from '../store/settings'
 import { useThreadViewStore } from '../store/threadView'
@@ -48,8 +49,10 @@ export default function ThreadViewPage() {
   }, [autoLoadNext, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const handleQuote = (pid: string) => {
+    const setReferencePostId = useThreadViewStore.getState().setReferencePostId
     const el = document.querySelector(`[data-pid="${pid}"]`) as HTMLElement
     if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('bg-accent-50/30'); setTimeout(() => el.classList.remove('bg-accent-50/30'), 1500) }
+    else { setReferencePostId(pid) }
   }
 
   const submitReply = async () => {
@@ -116,6 +119,8 @@ export default function ThreadViewPage() {
           </div>
         </div>
       )}
+
+      <ReferencePopup currentTid={tid} />
     </div>
   )
 }
