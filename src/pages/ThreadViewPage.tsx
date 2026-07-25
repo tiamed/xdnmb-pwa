@@ -411,7 +411,7 @@ export default function ThreadViewPage() {
                         setReplyOpen(true)
                       }}
                     />
-                    <div className="border-t-2 border-default-200 dark:border-default-700" />
+                    <div className="border-t border-divider" />
                   </>
                 ) : (
                   <PostItem
