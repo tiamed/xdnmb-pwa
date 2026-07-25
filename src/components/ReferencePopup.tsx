@@ -6,10 +6,11 @@ import { useThreadViewStore } from '../store/threadView'
 import PostItem from './PostItem'
 import type { Reference } from '../types/api'
 
-function resolveThreadId(resto: string | undefined, currentTid: string) {
-  // X岛: 串首 resto 为 "0"；回复的 resto 为所属串 id
-  if (!resto || resto === '0') return currentTid
-  return String(resto)
+/** 解析引用所属串 id：串首 resto 为 0，串 id 即自身 id；回复的 resto 为所属串 id */
+function resolveThreadId(ref: Reference | undefined, postId: string, currentTid: string) {
+  const resto = ref?.resto != null ? String(ref.resto) : ''
+  if (!resto || resto === '0') return postId
+  return resto || currentTid
 }
 
 export default function ReferencePopup({ currentTid }: { currentTid: string }) {
@@ -19,12 +20,11 @@ export default function ReferencePopup({ currentTid }: { currentTid: string }) {
   const nav = useNavigate()
   const { data, isLoading, error } = useReference(postId || '')
 
-  const resto = data ? (data as Reference).resto : undefined
   const close = () => setReferencePostId(null)
 
   const showOriginal = () => {
     if (!postId) return
-    const targetTid = resolveThreadId(resto, currentTid)
+    const targetTid = resolveThreadId(data as Reference | undefined, postId, currentTid)
     close()
     setFocusPostId(postId)
     if (targetTid !== currentTid) {
