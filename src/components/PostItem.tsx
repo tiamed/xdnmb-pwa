@@ -35,11 +35,20 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
 
   const handleContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const t = e.target as HTMLElement
-    if (t.classList.contains('quote-link')) {
-      const pid = t.getAttribute('data-pid')
-      if (pid && onQuoteClick) { e.preventDefault(); onQuoteClick(pid) }
+    const quote = t.closest('.quote-link') as HTMLElement | null
+    if (quote) {
+      const pid = quote.getAttribute('data-pid')
+      if (pid && onQuoteClick) {
+        e.preventDefault()
+        e.stopPropagation()
+        onQuoteClick(pid)
+      }
+      return
     }
-    if (t.classList.contains('spoiler')) { t.classList.toggle('revealed') }
+    if (t.classList.contains('spoiler') || t.closest('.spoiler')) {
+      const spoiler = t.classList.contains('spoiler') ? t : t.closest('.spoiler')
+      spoiler?.classList.toggle('revealed')
+    }
   }
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -49,8 +58,12 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
   }
 
   const renderHTML = () => {
-    let html = post.content
-    html = html.replace(/&gt;&gt;No\.(\d+)/g, '<span class="quote-link" data-pid="$1">&gt;&gt;No.$1</span>')
+    let html = post.content || ''
+    // API may return entities (&gt;&gt;) or raw >> ; optional "No."
+    html = html.replace(
+      /(?:&gt;|>){2}(?:No\.)?(\d+)/gi,
+      '<span class="quote-link" data-pid="$1">&gt;&gt;No.$1</span>',
+    )
     if (!showSpoiler) html = html.replace(/\[h\]([\s\S]*?)\[\/h\]/g, '<span class="spoiler">隐藏内容</span>')
     return { __html: html }
   }

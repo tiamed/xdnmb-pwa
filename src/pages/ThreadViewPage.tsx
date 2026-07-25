@@ -282,15 +282,7 @@ export default function ThreadViewPage() {
   }, [!!thread])
 
   const handleQuote = (pid: string) => {
-    const setReferencePostId = useThreadViewStore.getState().setReferencePostId
-    const el = document.querySelector(`[data-pid="${pid}"]`) as HTMLElement
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      el.classList.add('bg-accent-50/30')
-      setTimeout(() => el.classList.remove('bg-accent-50/30'), 1500)
-    } else {
-      setReferencePostId(pid)
-    }
+    useThreadViewStore.getState().setReferencePostId(pid)
   }
 
   const submitReply = async () => {
