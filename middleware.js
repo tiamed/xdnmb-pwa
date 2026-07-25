@@ -32,6 +32,7 @@ export default async function handler(request) {
   }
 
   try {
+    const contentType = request.headers.get('content-type')
     const headers = new Headers()
     headers.set('Host', new URL(upstream).hostname)
     headers.set('Referer', 'https://www.nmbxd1.com/')
@@ -39,6 +40,7 @@ export default async function handler(request) {
     headers.set('Accept', 'application/json, text/plain, */*')
     headers.set('Accept-Language', 'zh-CN,zh;q=0.9')
     headers.set('X-Requested-With', 'XMLHttpRequest')
+    if (contentType) headers.set('Content-Type', contentType)
 
     const init = {
       method: request.method,
