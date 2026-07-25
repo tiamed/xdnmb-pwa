@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { Reply, Loader2 } from 'lucide-react'
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -21,6 +21,11 @@ function getScrollEl() {
   return document.getElementById('main-scroll-container')
 }
 
+type ListRow =
+  | { kind: 'prev'; key: string }
+  | { kind: 'op'; key: string; post: Post }
+  | { kind: 'reply'; key: string; post: Post }
+
 export default function ThreadViewPage() {
   const { id: rawId } = useParams<{ id: string }>()
   const [sp] = useSearchParams()
@@ -39,7 +44,6 @@ export default function ThreadViewPage() {
   const queryClient = useQueryClient()
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const bottomSentinelRef = useRef<HTMLDivElement>(null)
-  const prependAnchorRef = useRef<{ scrollHeight: number; scrollTop: number; addedEstimate: number } | null>(null)
 
   const {
     data,
@@ -77,21 +81,46 @@ export default function ThreadViewPage() {
     [pageSlices],
   )
 
+  // OP + prev-loader live in the virtual list so prepend anchoring covers them
+  const rows = useMemo<ListRow[]>(() => {
+    const list: ListRow[] = []
+    if (hasPreviousPage) {
+      list.push({ kind: 'prev', key: 'prev-loader' })
+    }
+    if (showMainPost && thread) {
+      list.push({ kind: 'op', key: `op-${thread.id}`, post: thread as Post })
+    }
+    for (const reply of displayed) {
+      list.push({ kind: 'reply', key: reply.id, post: reply })
+    }
+    return list
+  }, [hasPreviousPage, showMainPost, thread, displayed])
+
+  const rowsRef = useRef(rows)
+  rowsRef.current = rows
+
   const indexToPage = useMemo(() => {
     const map: number[] = []
+    if (hasPreviousPage) map.push(firstPageParam)
+    if (showMainPost) map.push(1)
     for (const slice of pageSlices) {
       for (let i = 0; i < slice.replies.length; i++) map.push(slice.page)
     }
     return map
-  }, [pageSlices])
+  }, [pageSlices, showMainPost, hasPreviousPage, firstPageParam])
   const indexToPageRef = useRef(indexToPage)
   indexToPageRef.current = indexToPage
 
+  const getItemKey = useCallback((index: number) => rowsRef.current[index]?.key ?? index, [])
+
   const virtualizer = useVirtualizer({
-    count: displayed.length,
+    count: rows.length,
     getScrollElement: getScrollEl,
     estimateSize: () => ITEM_HEIGHT,
     overscan: 8,
+    getItemKey,
+    // Keep visible items stable when older pages are prepended
+    anchorTo: 'end',
     onChange: instance => {
       const items = instance.getVirtualItems()
       if (!items.length) return
@@ -119,43 +148,22 @@ export default function ThreadViewPage() {
 
   const loadPrevious = () => {
     if (!hasPrevRef.current || fetchingPrevRef.current) return false
-    const el = getScrollEl()
-    if (!el) return false
-    prependAnchorRef.current = {
-      scrollHeight: el.scrollHeight,
-      scrollTop: el.scrollTop,
-      addedEstimate: PAGE_SIZE * ITEM_HEIGHT,
-    }
     void fetchPrevRef.current()
     return true
   }
 
-  // Preserve scroll when previous pages are prepended (incl. main post appearing)
+  // If content is still shorter than the viewport after a prepend, keep loading
   const prevFirstPageRef = useRef(firstPageParam)
   useLayoutEffect(() => {
-    const anchor = prependAnchorRef.current
     const prepended = firstPageParam < prevFirstPageRef.current
     prevFirstPageRef.current = firstPageParam
-    if (!anchor || !prepended) {
-      prependAnchorRef.current = null
-      return
-    }
+    if (!prepended) return
     const el = getScrollEl()
-    if (!el) {
-      prependAnchorRef.current = null
-      return
-    }
-    // Prefer measured scrollHeight delta; fall back to estimated prepend height
-    let delta = el.scrollHeight - anchor.scrollHeight
-    if (delta <= 0 && anchor.addedEstimate > 0) delta = anchor.addedEstimate
-    if (delta !== 0) el.scrollTop = anchor.scrollTop + delta
-    prependAnchorRef.current = null
-
-    // Page still shorter than viewport → stay at top and keep pulling previous
-    if (el.scrollTop <= 48 && hasPrevRef.current && !fetchingPrevRef.current) {
+    if (!el) return
+    if (el.scrollHeight <= el.clientHeight + 48 && hasPrevRef.current && !fetchingPrevRef.current) {
       queueMicrotask(() => { loadPrevious() })
     }
-  }, [displayed.length, firstPageParam, showMainPost])
+  }, [displayed.length, firstPageParam, rows.length])
 
   const jumpTarget = useThreadViewStore(s => s.jumpToPage)
   useEffect(() => {
@@ -163,7 +171,6 @@ export default function ThreadViewPage() {
     setCurrentPage(jumpTarget)
     setJumpToPage(0)
     prevFirstPageRef.current = jumpTarget
-    prependAnchorRef.current = null
     ;(async () => {
       const pageData = await getThread(tid, jumpTarget)
       queryClient.setQueryData(['thread', tid], {
@@ -175,7 +182,6 @@ export default function ThreadViewPage() {
   }, [jumpTarget, tid, queryClient, setCurrentPage, setJumpToPage])
 
   // Bi-directional load. Re-bind when thread data first appears (sentinels exist).
-  // Do not depend on firstPageParam — re-observe would auto-cascade on every prepend.
   useEffect(() => {
     if (!thread) return
     const el = getScrollEl()
@@ -278,67 +284,66 @@ export default function ThreadViewPage() {
     <div className="min-h-full page-enter pb-4">
       <div ref={topSentinelRef} className="h-px" />
 
-      {hasPreviousPage && (
-        <div className="py-3 text-center text-xs text-muted">
-          {isFetchingPreviousPage ? (
-            <span className="inline-flex items-center gap-1.5">
-              <Loader2 size={12} className="animate-spin" />加载上一页…
-            </span>
-          ) : (
-            <button
-              type="button"
-              className="text-muted hover:text-foreground transition-colors"
-              onClick={() => loadPrevious()}
-            >
-              上拉加载上一页
-            </button>
-          )}
-        </div>
-      )}
-
-      {showMainPost && (
-        <div data-pid={mainPost.id}>
-          <PostItem
-            post={mainPost}
-            isPo
-            onQuoteClick={handleQuote}
-            onReply={id => {
-              setReplyTo(id)
-              setReplyContent(`>>No.${id}\n`)
-              setReplyOpen(true)
-            }}
-          />
-        </div>
-      )}
-
-      <div className={showMainPost ? 'border-t-2 border-default-200 dark:border-default-700' : undefined}>
+      <div>
         <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
           {virtualItems.map(virtualItem => {
-            const reply = displayed[virtualItem.index]
+            const row = rows[virtualItem.index]
+            if (!row) return null
             return (
               <div
                 key={virtualItem.key}
                 data-index={virtualItem.index}
-                data-pid={reply.id}
+                data-pid={row.kind === 'prev' ? undefined : row.post.id}
                 ref={virtualizer.measureElement}
                 style={{
                   position: 'absolute',
-                  top: 0,
+                  top: virtualItem.start,
                   left: 0,
                   width: '100%',
-                  transform: `translateY(${virtualItem.start}px)`,
                 }}
               >
-                <PostItem
-                  post={reply}
-                  poHash={poHash}
-                  onQuoteClick={handleQuote}
-                  onReply={id => {
-                    setReplyTo(id)
-                    setReplyContent(`>>No.${id}\n`)
-                    setReplyOpen(true)
-                  }}
-                />
+                {row.kind === 'prev' ? (
+                  <div className="py-3 text-center text-xs text-muted">
+                    {isFetchingPreviousPage ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Loader2 size={12} className="animate-spin" />加载上一页…
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="text-muted hover:text-foreground transition-colors"
+                        onClick={() => loadPrevious()}
+                      >
+                        上拉加载上一页
+                      </button>
+                    )}
+                  </div>
+                ) : row.kind === 'op' ? (
+                  <>
+                    <PostItem
+                      post={mainPost}
+                      isPo
+                      onQuoteClick={handleQuote}
+                      onReply={id => {
+                        setReplyTo(id)
+                        setReplyContent(`>>No.${id}\n`)
+                        setReplyOpen(true)
+                      }}
+                    />
+                    <div className="border-t-2 border-default-200 dark:border-default-700" />
+                  </>
+                ) : (
+                  <PostItem
+                    post={row.post}
+                    poHash={poHash}
+                    onQuoteClick={handleQuote}
+                    onReply={id => {
+                      setReplyTo(id)
+                      setReplyContent(`>>No.${id}\n`)
+                      setReplyOpen(true)
+                    }}
+                  />
+                )}
               </div>
             )
           })}
