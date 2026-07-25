@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const [newHash, setNewHash] = useState('')
   const [uuidInput, setUuidInput] = useState(feedUuid)
   const [syncing, setSyncing] = useState(false)
+  const [checking, setChecking] = useState(false)
   const [toast, setToast] = useState('')
 
   const addNewCookie = () => {
@@ -30,6 +31,47 @@ export default function SettingsPage() {
     addCookie(newLabel, h)
     setNewLabel(''); setNewHash('')
     setToast('已添加 Cookie'); setTimeout(() => setToast(''), 1500)
+  }
+
+  const handleCheckUpdate = () => {
+    setChecking(true)
+
+    const timeout = setTimeout(() => {
+      cleanup()
+      setChecking(false)
+      setToast('已是最新版本')
+      setTimeout(() => setToast(''), 2000)
+    }, 8000)
+
+    const onControllerChange = () => {
+      cleanup()
+      setChecking(false)
+      setToast('更新已就绪，即将刷新…')
+      setTimeout(() => window.location.reload(), 500)
+    }
+
+    const cleanup = () => {
+      clearTimeout(timeout)
+      navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange)
+    }
+
+    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange)
+
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (!reg) {
+        cleanup()
+        setChecking(false)
+        setToast('未注册 Service Worker')
+        setTimeout(() => setToast(''), 2000)
+        return
+      }
+      reg.update()
+    }).catch(() => {
+      cleanup()
+      setChecking(false)
+      setToast('检查更新失败')
+      setTimeout(() => setToast(''), 2000)
+    })
   }
 
   const handleSaveUuid = async () => {
@@ -167,6 +209,13 @@ export default function SettingsPage() {
 
       <Section title="关于">
         <Row label="版本"><span className="text-sm text-muted">1.0.0</span></Row>
+        <Row label="检查更新">
+          <button onClick={handleCheckUpdate} disabled={checking}
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg bg-default-100 text-default-600 hover:bg-default-200 disabled:opacity-50 transition-all">
+            <RefreshCw size={12} className={checking ? 'animate-spin' : ''} />
+            {checking ? '检查中…' : '检查更新'}
+          </button>
+        </Row>
         <Row label="GitHub">
           <a href="https://github.com/tiamed/xdnmb-pwa" target="_blank" rel="noopener noreferrer"
             className="text-sm text-accent hover:underline inline-flex items-center gap-1">
