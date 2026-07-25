@@ -73,9 +73,11 @@ export default function NavBar() {
           <h1 className="text-sm font-medium text-foreground truncate ml-1">{title}</h1>
         )}
 
+        <div className="flex-1" />
+
         {/* thread toolbar */}
         {isThread && (
-          <div className="flex items-center gap-0.5 ml-2">
+          <div className="flex items-center gap-0.5">
             <button onClick={() => nav(`${loc.pathname}${poOnly ? '' : '?po=1'}`, { replace: true })}
               className={`flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] transition-all ${poOnly ? 'bg-accent text-accent-foreground' : 'text-muted hover:bg-default-100'}`}>
               <Eye size={12} />PO
@@ -125,15 +127,13 @@ export default function NavBar() {
 
         {/* forum (board) page toolbar */}
         {loc.pathname.startsWith('/f/') && (
-          <div className="flex items-center gap-0.5 ml-2">
+          <div className="flex items-center gap-0.5">
             <button onClick={() => useForumViewStore.getState().setCreateThreadOpen(true)}
               className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] text-accent font-medium hover:bg-accent-50 dark:hover:bg-accent-900/20">
               <PencilLine size={12} />发新串
             </button>
           </div>
         )}
-
-        <div className="flex-1" />
         {loc.pathname.startsWith('/favorites') && (
           <Button isIconOnly variant="ghost" size="sm" onPress={() => nav(`/favorites${loc.search.includes('search=1') ? '' : '?search=1'}`, { replace: true })} aria-label="搜索">
             <SearchIcon size={18} />
