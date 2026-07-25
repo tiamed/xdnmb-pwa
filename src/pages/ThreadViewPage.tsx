@@ -41,6 +41,8 @@ export default function ThreadViewPage() {
   const setJumpToPage = useThreadViewStore(s => s.setJumpToPage)
   const setThreadTitle = useThreadViewStore(s => s.setThreadTitle)
   const jumpTarget = useThreadViewStore(s => s.jumpToPage)
+  const focusPostId = useThreadViewStore(s => s.focusPostId)
+  const setFocusPostId = useThreadViewStore(s => s.setFocusPostId)
   const [replyContent, setReplyContent] = useState('')
   const [toast, setToast] = useState('')
   const { updateReplyCount } = useFavoritesStore()
@@ -280,6 +282,45 @@ export default function ThreadViewPage() {
       setThreadTitle(thread.title || '无标题')
     }
   }, [!!thread])
+
+  // 显示原串：滚动并高亮目标帖；若未加载则尽量跳到首页（楼主）
+  useEffect(() => {
+    if (!focusPostId || !thread) return
+
+    const highlight = (el: HTMLElement) => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('bg-accent-50/30')
+      setTimeout(() => el.classList.remove('bg-accent-50/30'), 1500)
+      setFocusPostId(null)
+    }
+
+    const el = document.querySelector(`[data-pid="${focusPostId}"]`) as HTMLElement | null
+    if (el) {
+      highlight(el)
+      return
+    }
+
+    // OP not in view because we're not on page 1
+    if (focusPostId === tid && firstPageParam !== 1) {
+      setJumpToPage(1)
+      return
+    }
+
+    let attempts = 0
+    const timer = window.setInterval(() => {
+      const node = document.querySelector(`[data-pid="${focusPostId}"]`) as HTMLElement | null
+      if (node) {
+        window.clearInterval(timer)
+        highlight(node)
+        return
+      }
+      if (++attempts >= 25) {
+        window.clearInterval(timer)
+        setFocusPostId(null)
+      }
+    }, 120)
+    return () => window.clearInterval(timer)
+  }, [focusPostId, thread, displayed.length, tid, firstPageParam, setFocusPostId, setJumpToPage])
 
   const handleQuote = (pid: string) => {
     useThreadViewStore.getState().setReferencePostId(pid)

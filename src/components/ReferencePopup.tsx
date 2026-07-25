@@ -6,16 +6,32 @@ import { useThreadViewStore } from '../store/threadView'
 import PostItem from './PostItem'
 import type { Reference } from '../types/api'
 
+function resolveThreadId(resto: string | undefined, currentTid: string) {
+  // X岛: 串首 resto 为 "0"；回复的 resto 为所属串 id
+  if (!resto || resto === '0') return currentTid
+  return String(resto)
+}
+
 export default function ReferencePopup({ currentTid }: { currentTid: string }) {
   const postId = useThreadViewStore(s => s.referencePostId)
   const setReferencePostId = useThreadViewStore(s => s.setReferencePostId)
+  const setFocusPostId = useThreadViewStore(s => s.setFocusPostId)
   const nav = useNavigate()
   const { data, isLoading, error } = useReference(postId || '')
 
-  const resto = data && (data as Reference).resto
+  const resto = data ? (data as Reference).resto : undefined
   const close = () => setReferencePostId(null)
 
-  // Controlled drawer: Backdrop alone (no Drawer root / trigger), per HeroUI v3 docs
+  const showOriginal = () => {
+    if (!postId) return
+    const targetTid = resolveThreadId(resto, currentTid)
+    close()
+    setFocusPostId(postId)
+    if (targetTid !== currentTid) {
+      nav(`/t/${targetTid}`)
+    }
+  }
+
   return (
     <Drawer.Backdrop
       isOpen={!!postId}
@@ -40,11 +56,8 @@ export default function ReferencePopup({ currentTid }: { currentTid: string }) {
           <Drawer.Footer>
             <Button
               className="w-full"
-              isDisabled={isLoading}
-              onPress={() => {
-                close()
-                nav(`/t/${resto || currentTid}`)
-              }}
+              isDisabled={isLoading || !data}
+              onPress={showOriginal}
             >
               <ExternalLink size={15} />
               显示原串
