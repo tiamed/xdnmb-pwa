@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['xp.svg'],
       manifest: {
         name: 'X岛匿名版',
         short_name: 'X岛',
@@ -21,7 +21,7 @@ export default defineConfig({
         start_url: '.',
         icons: [
           {
-            src: 'favicon.svg',
+            src: 'xp.svg',
             sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any maskable',
