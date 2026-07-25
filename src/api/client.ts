@@ -131,11 +131,31 @@ export async function getFeed(feedId: string, page = 1): Promise<FeedItem[]> {
 }
 
 export async function addFeed(feedId: string, threadId: string): Promise<void> {
-  await apiFetch(`addFeed?uuid=${feedId}&tid=${threadId}`)
+  // 见 https://github.com/orzogc/xdnmb_api — 成功响应为含「订阅大成功」的 JSON 字符串
+  await feedMutate(`addFeed?uuid=${encodeURIComponent(feedId)}&tid=${encodeURIComponent(threadId)}`, '订阅大成功')
 }
 
 export async function delFeed(feedId: string, threadId: string): Promise<void> {
-  await apiFetch(`delFeed?uuid=${feedId}&tid=${threadId}`)
+  await feedMutate(`delFeed?uuid=${encodeURIComponent(feedId)}&tid=${encodeURIComponent(threadId)}`, '取消订阅成功')
+}
+
+async function feedMutate(path: string, successHint: string): Promise<void> {
+  const url = `${apiBase}${path}`
+  const userHash = getActiveUserHash()
+  const headers: Record<string, string> = {}
+  if (userHash) headers['X-Userhash'] = userHash
+
+  const res = await fetch(url, { headers, credentials: 'same-origin' })
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+
+  const data = await res.json()
+  if (data && typeof data === 'object' && 'error' in data) {
+    throw new Error(String((data as { error: unknown }).error))
+  }
+  const text = typeof data === 'string' ? data : JSON.stringify(data ?? '')
+  if (!text.includes(successHint)) {
+    throw new Error(text || '订阅操作失败')
+  }
 }
 
 export async function search(keyword: string): Promise<ForumThread[]> {

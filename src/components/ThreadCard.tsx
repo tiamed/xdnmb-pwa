@@ -5,12 +5,13 @@ import { getImageUrl } from '../api/client'
 import type { ForumThread } from '../types/api'
 import { stripHtml, truncateText, formatTime } from '../hooks/useUtils'
 import { useSettingsStore } from '../store/settings'
-import { useFavoritesStore } from '../store/favorites'
+import { useIsInFeed, useToggleFeed } from '../hooks/useApi'
 interface Props { thread: ForumThread; forumName?: string; onOpen?: () => void }
 
 export default function ThreadCard({ thread, forumName, onOpen }: Props) {
   const { imageMode } = useSettingsStore()
-  const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore()
+  const fav = useIsInFeed(thread.id)
+  const { toggle: toggleFeed } = useToggleFeed()
   const [imgLoaded, setImgLoaded] = useState(false)
   const [imgError, setImgError] = useState(false)
   const [viewerOpen, setViewerOpen] = useState(false)
@@ -18,7 +19,6 @@ export default function ThreadCard({ thread, forumName, onOpen }: Props) {
   const [pos, setPos] = useState({ x: 0, y: 0 })
   const touchRef = useRef<{ x: number; y: number; dist: number; zoom: number; px: number; py: number } | null>(null)
   const dragMoved = useRef(false)
-  const fav = isFavorite(thread.id)
   const preview = stripHtml(thread.content)
   const hasImage = thread.img && thread.ext
   const rc = Number(thread.ReplyCount || 0)
@@ -52,11 +52,12 @@ export default function ThreadCard({ thread, forumName, onOpen }: Props) {
                   {forumName && <Chip size="sm" variant="soft" color="accent" className="h-4 text-[10px]">{forumName}</Chip>}
                 </div>
               </div>
-              <button onClick={e => { e.stopPropagation(); fav ? removeFavorite(thread.id) : addFavorite({
-                id: thread.id, title: thread.title || '无标题', forumName: forumName || '', forumId: thread.fid || '',
-                preview: truncateText(preview, 100), img: thread.img, ext: thread.ext, replyCount: rc
-              }) }}
-                className={`shrink-0 p-1 rounded-lg transition-colors ${fav ? 'text-warning bg-warning-50 dark:bg-warning-900/20' : 'text-default-300 hover:text-warning-400'}`}>
+              <button onClick={e => {
+                e.stopPropagation()
+                void toggleFeed(thread.id, fav)
+              }}
+                className={`shrink-0 p-1 rounded-lg transition-colors ${fav ? 'text-warning bg-warning-50 dark:bg-warning-900/20' : 'text-default-300 hover:text-warning-400'}`}
+                aria-label={fav ? '取消订阅' : '订阅'}>
                 <Star size={15} fill={fav ? 'currentColor' : 'none'} />
               </button>
             </div>

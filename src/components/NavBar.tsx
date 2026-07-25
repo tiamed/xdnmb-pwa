@@ -2,10 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, BookOpen } from 'lucide-react'
 import { Button } from '@heroui/react'
-import { useForumList, useTimelineList } from '../hooks/useApi'
+import { useFeedCount, useForumList, useIsInFeed, useTimelineList, useToggleFeed } from '../hooks/useApi'
 import { useThreadViewStore } from '../store/threadView'
 import { useForumViewStore } from '../store/forumView'
-import { useFavoritesStore } from '../store/favorites'
 import { useHistoryStore } from '../store/history'
 
 export default function NavBar() {
@@ -27,12 +26,12 @@ export default function NavBar() {
   const isThread = loc.pathname.startsWith('/t/')
   const tid = isThread ? loc.pathname.split('/')[2] : ''
   const poOnly = loc.search.includes('po=1')
-  const { currentPage, totalPages, setJumpToPage, threadTitle } = useThreadViewStore()
+  const { currentPage, totalPages, setJumpToPage } = useThreadViewStore()
   const { data: forumGroups } = useForumList()
   const { data: timelines } = useTimelineList()
-  const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore()
-  const fav = isFavorite(tid)
-  const favCount = useFavoritesStore(s => s.items.length)
+  const fav = useIsInFeed(tid)
+  const { toggle: toggleFeed } = useToggleFeed()
+  const favCount = useFeedCount()
   const historyCount = useHistoryStore(s => s.items.length)
   const clearHistory = useHistoryStore(s => s.clearHistory)
 
@@ -113,8 +112,8 @@ export default function NavBar() {
               )}
             </div>
             <Button isIconOnly variant="ghost" size="sm"
-              onPress={() => fav ? removeFavorite(tid) : addFavorite({ id: tid, title: threadTitle, forumName: '', forumId: '', preview: '', img: '', ext: '', replyCount: 0 })}
-              aria-label={fav ? '取消收藏' : '收藏'}
+              onPress={() => { void toggleFeed(tid, fav) }}
+              aria-label={fav ? '取消订阅' : '订阅'}
               style={{ color: fav ? 'var(--color-warning)' : undefined }}>
               <Star size={14} fill={fav ? 'currentColor' : 'none'} />
             </Button>

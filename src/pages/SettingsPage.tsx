@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useSettingsStore, type ImageMode, type ReplySort } from '../store/settings'
 import { getApiBaseUrl, setApiBase, getFeed } from '../api/client'
-import { useFavoritesStore } from '../store/favorites'
 import { Button } from '@heroui/react'
 import { Sun, Moon, Monitor, RefreshCw, Trash2, PlusCircle, Check } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -14,7 +13,6 @@ export default function SettingsPage() {
     cookies, activeCookieId,
     addCookie, updateCookie, removeCookie, setActiveCookie,
   } = useSettingsStore()
-  const { syncFromFeed } = useFavoritesStore()
   const queryClient = useQueryClient()
 
   const [apiUrl, setApiUrl] = useState(getApiBaseUrl())
@@ -77,30 +75,32 @@ export default function SettingsPage() {
   const handleSaveUuid = async () => {
     const uuid = uuidInput.trim()
     setFeedUuid(uuid)
-    if (!uuid) return
+    if (!uuid) {
+      setToast('已清除订阅 UUID')
+      setTimeout(() => setToast(''), 2000)
+      return
+    }
 
     setSyncing(true)
     try {
-      const data = await queryClient.fetchInfiniteQuery({
-        queryKey: ['feed', uuid],
-        queryFn: ({ pageParam }) => getFeed(uuid, pageParam),
-        initialPageParam: 1,
-        pages: 9999,
-        getNextPageParam: (lastPage, _all, lastPageParam) =>
-          lastPage.length > 0 ? lastPageParam + 1 : undefined,
+      await queryClient.invalidateQueries({ queryKey: ['feed'] })
+      await queryClient.invalidateQueries({ queryKey: ['feedIds'] })
+      const ids = await queryClient.fetchQuery({
+        queryKey: ['feedIds', uuid],
+        queryFn: async () => {
+          const all: string[] = []
+          for (let page = 1; page <= 500; page++) {
+            const items = await getFeed(uuid, page)
+            if (!items.length) break
+            for (const item of items) all.push(item.id)
+          }
+          return all
+        },
       })
-      const allItems = data.pages.flat()
-      for (const item of allItems) {
-        syncFromFeed({
-          id: item.id, title: item.title || '无标题', forumName: '',
-          forumId: item.fid, preview: item.content,
-          img: item.img, ext: item.ext, replyCount: Number(item.reply_count || 0),
-        })
-      }
-      setToast(`已同步 ${allItems.length} 个订阅`)
+      setToast(`已保存，共 ${ids.length} 个订阅`)
       setTimeout(() => setToast(''), 2500)
     } catch {
-      setToast('同步失败，请检查 UUID 是否正确')
+      setToast('刷新失败，请检查 UUID 是否正确')
       setTimeout(() => setToast(''), 2500)
     } finally {
       setSyncing(false)
@@ -201,7 +201,7 @@ export default function SettingsPage() {
               className="flex-1 px-2.5 py-1.5 text-sm rounded-lg bg-default-100 text-foreground focus:outline-none focus:ring-2 focus:ring-accent border-none min-w-0" />
             <Button size="sm" variant="primary" onPress={handleSaveUuid} isDisabled={syncing}>
               {syncing ? <RefreshCw size={14} className="animate-spin" /> : null}
-              {syncing ? '同步中…' : '同步'}
+              {syncing ? '刷新中…' : '保存'}
             </Button>
           </div>
         </Row>

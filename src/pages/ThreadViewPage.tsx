@@ -9,7 +9,6 @@ import PostItem from '../components/PostItem'
 import ReferencePopup from '../components/ReferencePopup'
 import { ListSkeleton } from '../components/Skeleton'
 import { useThreadViewStore } from '../store/threadView'
-import { useFavoritesStore } from '../store/favorites'
 import { useHistoryStore } from '../store/history'
 import { stripHtml, truncateText } from '../hooks/useUtils'
 import type { Post, Thread } from '../types/api'
@@ -45,7 +44,6 @@ export default function ThreadViewPage() {
   const setFocusPostId = useThreadViewStore(s => s.setFocusPostId)
   const [replyContent, setReplyContent] = useState('')
   const [toast, setToast] = useState('')
-  const { updateReplyCount } = useFavoritesStore()
   const { addHistory } = useHistoryStore()
   const replyMutation = useReplyThread()
   const queryClient = useQueryClient()
@@ -278,7 +276,6 @@ export default function ThreadViewPage() {
         replyCount: total,
         visitedAt: Date.now(),
       })
-      updateReplyCount(thread.id, total)
       setThreadTitle(thread.title || '无标题')
     }
   }, [!!thread])

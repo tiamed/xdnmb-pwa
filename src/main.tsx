@@ -1,13 +1,17 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { HashRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
+import { queryClient } from './queryClient'
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 30 * 1000, gcTime: 5 * 60 * 1000, refetchOnWindowFocus: false } },
-})
+// 收藏已改为纯订阅 API，清除旧本地缓存
+try {
+  localStorage.removeItem('nmb-favorites')
+} catch {
+  /* ignore */
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -18,3 +22,4 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>,
 )
+

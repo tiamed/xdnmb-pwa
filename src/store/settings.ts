@@ -118,3 +118,16 @@ export function getActiveUserHash(): string {
   const c = s.cookies.find((c) => c.id === s.activeCookieId)
   return c?.hash ?? ''
 }
+
+export function getFeedUuid(): string {
+  return useSettingsStore.getState().feedUuid.trim()
+}
+
+/** 若尚未设置订阅 UUID，则生成并持久化 */
+export function ensureFeedUuid(): string {
+  const existing = getFeedUuid()
+  if (existing) return existing
+  const uuid = crypto.randomUUID()
+  useSettingsStore.getState().setFeedUuid(uuid)
+  return uuid
+}
