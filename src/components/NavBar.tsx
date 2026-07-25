@@ -82,9 +82,9 @@ export default function NavBar() {
             </button>
             <div className="relative">
               <button ref={pageBtnRef} onClick={() => { setPageOpen(p => !p); setPageInput(String(currentPage)) }}
-                className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] text-muted hover:bg-default-100 transition-colors">
-                <List size={12} />
-                <span className="tabular-nums">{currentPage}/{totalPages}</span>
+                className="flex items-center justify-center p-1.5 rounded-lg text-muted hover:bg-default-100 transition-colors"
+                aria-label="切换页面">
+                <List size={14} />
               </button>
               {pageOpen && (
                 <div className="absolute top-full right-0 mt-1 z-50 bg-background border border-divider rounded-xl shadow-lg p-3 min-w-[160px]"

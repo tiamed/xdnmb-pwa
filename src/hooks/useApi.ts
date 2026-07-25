@@ -59,7 +59,9 @@ export function useInfiniteTimelineThreads(timelineId: string) {
   })
 }
 
-// 串详情 - infinite replies
+const THREAD_PAGE_SIZE = 19
+
+// 串详情 - infinite replies (bi-directional)
 export function useInfiniteThread(threadId: string) {
   return useInfiniteQuery({
     queryKey: ['thread', threadId],
@@ -67,8 +69,8 @@ export function useInfiniteThread(threadId: string) {
     initialPageParam: 1,
     getNextPageParam: (lastPage, _all, lastPageParam) => {
       const total = Number(lastPage?.ReplyCount || 0)
-      const loaded = (_all || []).reduce((s, p) => s + (p?.Replies?.length || 0), 0)
-      return loaded < total ? lastPageParam + 1 : undefined
+      const totalPages = Math.max(1, Math.ceil(total / THREAD_PAGE_SIZE))
+      return lastPageParam < totalPages ? lastPageParam + 1 : undefined
     },
     getPreviousPageParam: (_firstPage, _all, firstPageParam) => {
       return firstPageParam > 1 ? firstPageParam - 1 : undefined
