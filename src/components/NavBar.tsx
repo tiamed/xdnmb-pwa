@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, List } from 'lucide-react'
+import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, BookOpen } from 'lucide-react'
 import { Button } from '@heroui/react'
 import { useForumList, useTimelineList } from '../hooks/useApi'
 import { useThreadViewStore } from '../store/threadView'
@@ -84,7 +84,7 @@ export default function NavBar() {
               <button ref={pageBtnRef} onClick={() => { setPageOpen(p => !p); setPageInput(String(currentPage)) }}
                 className="flex items-center justify-center p-1.5 rounded-lg text-muted hover:bg-default-100 transition-colors"
                 aria-label="切换页面">
-                <List size={14} />
+                <BookOpen size={14} />
               </button>
               {pageOpen && (
                 <div className="absolute top-full right-0 mt-1 z-50 bg-background border border-divider rounded-xl shadow-lg p-3 min-w-[160px]"

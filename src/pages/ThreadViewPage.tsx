@@ -16,13 +16,14 @@ import type { Post, Thread } from '../types/api'
 
 const PAGE_SIZE = 19
 const ITEM_HEIGHT = 85
+/** Unlock previous-page loading only after user scrolls this far from top */
+const PREV_UNLOCK_SCROLL_TOP = 120
 
 function getScrollEl() {
   return document.getElementById('main-scroll-container')
 }
 
 type ListRow =
-  | { kind: 'prev'; key: string }
   | { kind: 'op'; key: string; post: Post }
   | { kind: 'reply'; key: string; post: Post }
 
@@ -35,15 +36,23 @@ export default function ThreadViewPage() {
   const setReplyOpen = useThreadViewStore(s => s.setReplyOpen)
   const replyTo = useThreadViewStore(s => s.replyTo)
   const setReplyTo = useThreadViewStore(s => s.setReplyTo)
+  const setCurrentPage = useThreadViewStore(s => s.setCurrentPage)
+  const setTotalPages = useThreadViewStore(s => s.setTotalPages)
+  const setJumpToPage = useThreadViewStore(s => s.setJumpToPage)
+  const setThreadTitle = useThreadViewStore(s => s.setThreadTitle)
+  const jumpTarget = useThreadViewStore(s => s.jumpToPage)
   const [replyContent, setReplyContent] = useState('')
   const [toast, setToast] = useState('')
   const { updateReplyCount } = useFavoritesStore()
-  const { setCurrentPage, setTotalPages, setJumpToPage, setThreadTitle } = useThreadViewStore()
   const { addHistory } = useHistoryStore()
   const replyMutation = useReplyThread()
   const queryClient = useQueryClient()
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const bottomSentinelRef = useRef<HTMLDivElement>(null)
+  // After loading a previous page, stay locked until user scrolls away from top
+  const prevLoadLockedRef = useRef(false)
+  // Anchor a reply by id + its offset within the scroll container
+  const scrollAnchorRef = useRef<{ id: string; offset: number } | null>(null)
 
   const {
     data,
@@ -81,12 +90,10 @@ export default function ThreadViewPage() {
     [pageSlices],
   )
 
-  // OP + prev-loader live in the virtual list so prepend anchoring covers them
+  // Only OP + replies in the virtual list (no stable "loader" row at index 0 —
+  // that kept the scroll anchor at the top and caused infinite previous loads).
   const rows = useMemo<ListRow[]>(() => {
     const list: ListRow[] = []
-    if (hasPreviousPage) {
-      list.push({ kind: 'prev', key: 'prev-loader' })
-    }
     if (showMainPost && thread) {
       list.push({ kind: 'op', key: `op-${thread.id}`, post: thread as Post })
     }
@@ -94,20 +101,19 @@ export default function ThreadViewPage() {
       list.push({ kind: 'reply', key: reply.id, post: reply })
     }
     return list
-  }, [hasPreviousPage, showMainPost, thread, displayed])
+  }, [showMainPost, thread, displayed])
 
   const rowsRef = useRef(rows)
   rowsRef.current = rows
 
   const indexToPage = useMemo(() => {
     const map: number[] = []
-    if (hasPreviousPage) map.push(firstPageParam)
     if (showMainPost) map.push(1)
     for (const slice of pageSlices) {
       for (let i = 0; i < slice.replies.length; i++) map.push(slice.page)
     }
     return map
-  }, [pageSlices, showMainPost, hasPreviousPage, firstPageParam])
+  }, [pageSlices, showMainPost])
   const indexToPageRef = useRef(indexToPage)
   indexToPageRef.current = indexToPage
 
@@ -119,7 +125,7 @@ export default function ThreadViewPage() {
     estimateSize: () => ITEM_HEIGHT,
     overscan: 8,
     getItemKey,
-    // Keep visible items stable when older pages are prepended
+    // Keeps position stable when measured sizes above the viewport change
     anchorTo: 'end',
     onChange: instance => {
       const items = instance.getVirtualItems()
@@ -145,32 +151,64 @@ export default function ThreadViewPage() {
   fetchPrevRef.current = fetchPreviousPage
   const fetchNextRef = useRef(fetchNextPage)
   fetchNextRef.current = fetchNextPage
+  const virtualizerRef = useRef(virtualizer)
+  virtualizerRef.current = virtualizer
+
+  const captureScrollAnchor = () => {
+    const el = getScrollEl()
+    if (!el) return
+    const items = virtualizerRef.current.getVirtualItems()
+    const item = items.find(v => rowsRef.current[v.index]?.kind === 'reply') ?? items[0]
+    if (!item) return
+    const row = rowsRef.current[item.index]
+    if (!row) return
+    const node = document.querySelector(`[data-pid="${row.post.id}"]`)
+    if (!node) return
+    scrollAnchorRef.current = {
+      id: row.post.id,
+      offset: node.getBoundingClientRect().top - el.getBoundingClientRect().top,
+    }
+  }
 
   const loadPrevious = () => {
+    if (prevLoadLockedRef.current) return false
     if (!hasPrevRef.current || fetchingPrevRef.current) return false
+    captureScrollAnchor()
+    prevLoadLockedRef.current = true
     void fetchPrevRef.current()
     return true
   }
 
-  // If content is still shorter than the viewport after a prepend, keep loading
+  // Keep the same reply under the viewport after previous pages prepend.
   const prevFirstPageRef = useRef(firstPageParam)
   useLayoutEffect(() => {
     const prepended = firstPageParam < prevFirstPageRef.current
     prevFirstPageRef.current = firstPageParam
-    if (!prepended) return
+    const anchor = scrollAnchorRef.current
+    if (!prepended || !anchor) return
+    scrollAnchorRef.current = null
+
     const el = getScrollEl()
     if (!el) return
-    if (el.scrollHeight <= el.clientHeight + 48 && hasPrevRef.current && !fetchingPrevRef.current) {
-      queueMicrotask(() => { loadPrevious() })
-    }
-  }, [displayed.length, firstPageParam, rows.length])
 
-  const jumpTarget = useThreadViewStore(s => s.jumpToPage)
+    const idx = rowsRef.current.findIndex(r => r.post.id === anchor.id)
+    if (idx < 0) return
+
+    // Use virtualizer measurements (works even if the node isn't mounted yet)
+    virtualizerRef.current.getTotalSize()
+    const measurement = virtualizerRef.current.measurementsCache[idx]
+    if (!measurement) return
+    el.scrollTop = Math.max(0, measurement.start - anchor.offset)
+  }, [displayed.length, firstPageParam, rows.length, showMainPost])
+
   useEffect(() => {
     if (jumpTarget <= 0) return
     setCurrentPage(jumpTarget)
     setJumpToPage(0)
     prevFirstPageRef.current = jumpTarget
+    // Don't auto-pull previous just because jump lands at scrollTop 0
+    prevLoadLockedRef.current = true
+    scrollAnchorRef.current = null
     ;(async () => {
       const pageData = await getThread(tid, jumpTarget)
       queryClient.setQueryData(['thread', tid], {
@@ -181,7 +219,7 @@ export default function ThreadViewPage() {
     getScrollEl()?.scrollTo({ top: 0 })
   }, [jumpTarget, tid, queryClient, setCurrentPage, setJumpToPage])
 
-  // Bi-directional load. Re-bind when thread data first appears (sentinels exist).
+  // Bottom: infinite next. Top: previous only after user has scrolled away then back.
   useEffect(() => {
     if (!thread) return
     const el = getScrollEl()
@@ -190,15 +228,19 @@ export default function ThreadViewPage() {
     if (!el || !topEl || !bottomEl) return
 
     const onScroll = () => {
-      if (el.scrollTop <= 48) loadPrevious()
+      if (el.scrollTop > PREV_UNLOCK_SCROLL_TOP) {
+        prevLoadLockedRef.current = false
+      }
       if (el.scrollHeight - el.scrollTop - el.clientHeight <= 400) {
         if (hasNextRef.current && !fetchingNextRef.current) void fetchNextRef.current()
       }
     }
 
     const prevObserver = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) loadPrevious() },
-      { root: el, rootMargin: '120px 0px 0px 0px' },
+      ([entry]) => {
+        if (entry.isIntersecting) loadPrevious()
+      },
+      { root: el, rootMargin: '0px' },
     )
     prevObserver.observe(topEl)
 
@@ -284,6 +326,28 @@ export default function ThreadViewPage() {
     <div className="min-h-full page-enter pb-4">
       <div ref={topSentinelRef} className="h-px" />
 
+      {hasPreviousPage && (
+        <div className="py-2 text-center text-xs text-muted">
+          {isFetchingPreviousPage ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Loader2 size={12} className="animate-spin" />加载上一页…
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="text-muted hover:text-foreground transition-colors"
+              onClick={() => {
+                // Manual click always allowed (bypass lock from a prior auto-load)
+                prevLoadLockedRef.current = false
+                loadPrevious()
+              }}
+            >
+              加载上一页
+            </button>
+          )}
+        </div>
+      )}
+
       <div>
         <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
           {virtualItems.map(virtualItem => {
@@ -293,7 +357,7 @@ export default function ThreadViewPage() {
               <div
                 key={virtualItem.key}
                 data-index={virtualItem.index}
-                data-pid={row.kind === 'prev' ? undefined : row.post.id}
+                data-pid={row.post.id}
                 ref={virtualizer.measureElement}
                 style={{
                   position: 'absolute',
@@ -302,23 +366,7 @@ export default function ThreadViewPage() {
                   width: '100%',
                 }}
               >
-                {row.kind === 'prev' ? (
-                  <div className="py-3 text-center text-xs text-muted">
-                    {isFetchingPreviousPage ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <Loader2 size={12} className="animate-spin" />加载上一页…
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="text-muted hover:text-foreground transition-colors"
-                        onClick={() => loadPrevious()}
-                      >
-                        上拉加载上一页
-                      </button>
-                    )}
-                  </div>
-                ) : row.kind === 'op' ? (
+                {row.kind === 'op' ? (
                   <>
                     <PostItem
                       post={mainPost}
