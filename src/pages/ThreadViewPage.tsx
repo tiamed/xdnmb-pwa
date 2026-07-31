@@ -9,6 +9,7 @@ import PostItem from '../components/PostItem'
 import ReferencePopup from '../components/ReferencePopup'
 import { ListSkeleton } from '../components/Skeleton'
 import { useThreadViewStore } from '../store/threadView'
+import { useThreadProgressStore } from '../store/threadProgress'
 import { useHistoryStore } from '../store/history'
 import { stripHtml, truncateText } from '../hooks/useUtils'
 import type { Post, Thread } from '../types/api'
@@ -53,6 +54,10 @@ export default function ThreadViewPage() {
   const prevLoadLockedRef = useRef(false)
   // Anchor a reply by id + its offset within the scroll container
   const scrollAnchorRef = useRef<{ id: string; offset: number } | null>(null)
+  // Reading progress restore (page + post anchor)
+  const pendingRestoreRef = useRef<{ page: number; postId: string | null; offset: number } | null>(null)
+  const restoreDoneRef = useRef(false)
+  const restoreKickoffTidRef = useRef('')
 
   const {
     data,
@@ -218,6 +223,131 @@ export default function ThreadViewPage() {
     })()
     getScrollEl()?.scrollTo({ top: 0 })
   }, [jumpTarget, tid, queryClient, setCurrentPage, setJumpToPage])
+
+  // Kick off restore of last read page when entering a thread
+  useEffect(() => {
+    if (!tid || restoreKickoffTidRef.current === tid) return
+    restoreKickoffTidRef.current = tid
+    restoreDoneRef.current = false
+
+    const scrollTop = () => getScrollEl()?.scrollTo({ top: 0 })
+
+    // Explicit focus (e.g. jump to OP from reference) wins over resume
+    if (useThreadViewStore.getState().focusPostId) {
+      pendingRestoreRef.current = null
+      restoreDoneRef.current = true
+      scrollTop()
+      return
+    }
+
+    const saved = useThreadProgressStore.getState().get(tid)
+    if (!saved) {
+      pendingRestoreRef.current = null
+      restoreDoneRef.current = true
+      scrollTop()
+      return
+    }
+
+    const page = Math.max(1, saved.page || 1)
+    if (page <= 1 && !saved.postId && !(saved.offset > 0)) {
+      pendingRestoreRef.current = null
+      restoreDoneRef.current = true
+      scrollTop()
+      return
+    }
+
+    pendingRestoreRef.current = {
+      page,
+      postId: saved.postId,
+      offset: saved.offset || 0,
+    }
+
+    if (page > 1) setJumpToPage(page)
+  }, [tid, setJumpToPage])
+
+  // Apply saved scroll anchor once the target page is in the list
+  useLayoutEffect(() => {
+    if (restoreDoneRef.current) return
+    const pending = pendingRestoreRef.current
+    if (!pending || !thread) return
+    if (focusPostId) {
+      pendingRestoreRef.current = null
+      restoreDoneRef.current = true
+      return
+    }
+
+    const params = (data?.pageParams ?? []) as number[]
+    if (pending.page > 1 && !params.includes(pending.page)) return
+
+    const el = getScrollEl()
+    if (!el) return
+
+    prevLoadLockedRef.current = true
+
+    if (pending.postId) {
+      const idx = rowsRef.current.findIndex(r => r.post.id === pending.postId)
+      if (idx < 0) {
+        el.scrollTop = 0
+        pendingRestoreRef.current = null
+        restoreDoneRef.current = true
+        return
+      }
+
+      virtualizerRef.current.scrollToIndex(idx, { align: 'start' })
+      virtualizerRef.current.getTotalSize()
+      const measurement = virtualizerRef.current.measurementsCache[idx]
+      if (measurement) {
+        el.scrollTop = Math.max(0, measurement.start - pending.offset)
+      } else {
+        // Estimates only — nudge by offset from align:start
+        el.scrollTop = Math.max(0, el.scrollTop - pending.offset)
+      }
+    } else if (pending.offset > 0) {
+      el.scrollTop = pending.offset
+    }
+
+    pendingRestoreRef.current = null
+    restoreDoneRef.current = true
+  }, [thread, data?.pageParams, rows.length, focusPostId, displayed.length])
+
+  // Persist reading page + position while scrolling / on leave
+  useEffect(() => {
+    if (!tid) return
+    const el = getScrollEl()
+    if (!el) return
+
+    const saveProgress = () => {
+      if (!restoreDoneRef.current && pendingRestoreRef.current) return
+      const items = virtualizerRef.current.getVirtualItems()
+      if (!items.length) return
+      const item = items[0]
+      const row = rowsRef.current[item.index]
+      if (!row) return
+      const page = indexToPageRef.current[item.index] ?? useThreadViewStore.getState().currentPage
+      const node = document.querySelector(`[data-pid="${row.post.id}"]`)
+      const offset = node
+        ? node.getBoundingClientRect().top - el.getBoundingClientRect().top
+        : 0
+      useThreadProgressStore.getState().save(tid, {
+        page,
+        postId: row.post.id,
+        offset,
+      })
+    }
+
+    let timer = 0
+    const onScroll = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(saveProgress, 150)
+    }
+
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.clearTimeout(timer)
+      saveProgress()
+      el.removeEventListener('scroll', onScroll)
+    }
+  }, [tid, !!thread])
 
   // Bottom: infinite next. Top: previous only after user has scrolled away then back.
   useEffect(() => {

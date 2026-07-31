@@ -37,6 +37,17 @@ export default function NavBar() {
 
   const isDetail = isThread || loc.pathname.startsWith('/f/') || loc.pathname.startsWith('/timeline/')
 
+  const goBack = () => {
+    // React Router stores an in-app index on history.state; idx 0 / missing means
+    // this is the first entry (common in standalone PWA / deep link) — fall back home.
+    const idx = (window.history.state as { idx?: number } | null)?.idx
+    if (typeof idx === 'number' && idx > 0) {
+      nav(-1)
+      return
+    }
+    nav('/', { replace: true })
+  }
+
   const forumId = loc.pathname.startsWith('/f/') ? loc.pathname.split('/')[2] : ''
   let forumName = ''
   if (forumGroups) for (const g of forumGroups) { const f = g.forums.find(f => f.id === forumId); if (f) { forumName = f.name; break } }
@@ -62,7 +73,7 @@ export default function NavBar() {
     <header className="shrink-0 z-40 bg-background/90 backdrop-blur-md border-b border-divider">
       <div className="flex items-center h-12 px-2 gap-1 max-w-3xl mx-auto w-full">
         {isDetail && (
-          <Button isIconOnly variant="ghost" size="sm" onPress={() => nav(-1)} aria-label="返回">
+          <Button isIconOnly variant="ghost" size="sm" onPress={goBack} aria-label="返回">
             <ArrowLeft size={18} />
           </Button>
         )}
