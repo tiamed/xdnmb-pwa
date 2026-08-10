@@ -70,11 +70,59 @@ export function truncateText(text: string, maxLen: number): string {
 }
 
 /**
- * 格式化时间
+ * 解析 X 岛时间字符串为 Date
+ * 输入格式: "2024-01-15(一)10:30:00"
+ */
+export function parseNmbTime(timeStr: string): Date | null {
+  if (!timeStr) return null
+  const cleaned = timeStr.replace(/\(.+?\)/, ' ').replace(/\s+/g, ' ').trim()
+  // "2024-01-15 10:30:00" — treat as local time
+  const m = cleaned.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/)
+  if (!m) {
+    const d = new Date(cleaned)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+  const [, y, mo, d, h, mi, s] = m
+  return new Date(+y, +mo - 1, +d, +h, +mi, +s)
+}
+
+/**
+ * 相对时间：刚刚 / n分钟前 / n小时前 / n天前
+ */
+export function formatRelativeTime(timeStr: string, now = Date.now()): string {
+  const date = parseNmbTime(timeStr)
+  if (!date) return formatAbsoluteTime(timeStr)
+  const diff = now - date.getTime()
+  if (diff < 0) return formatAbsoluteTime(timeStr)
+  const sec = Math.floor(diff / 1000)
+  if (sec < 60) return '刚刚'
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min}分钟前`
+  const hour = Math.floor(min / 60)
+  if (hour < 24) return `${hour}小时前`
+  const day = Math.floor(hour / 24)
+  return `${day}天前`
+}
+
+/**
+ * 绝对时间：去掉星期括号，日期与时间之间加空格
+ */
+export function formatAbsoluteTime(timeStr: string): string {
+  // 输入格式: "2024-01-15(一)10:30:00" → "2024-01-15 10:30:00"
+  return timeStr.replace(/\(.+?\)/, ' ').replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * 格式化时间：1 天内用相对时间，否则用绝对时间
  */
 export function formatTime(timeStr: string): string {
-  // 输入格式: "2024-01-15(一)10:30:00" 或类似
-  return timeStr.replace(/\(.+\)/, '')
+  const date = parseNmbTime(timeStr)
+  if (!date) return formatAbsoluteTime(timeStr)
+  const diff = Date.now() - date.getTime()
+  if (diff >= 0 && diff < 24 * 60 * 60 * 1000) {
+    return formatRelativeTime(timeStr)
+  }
+  return formatAbsoluteTime(timeStr)
 }
 
 /**

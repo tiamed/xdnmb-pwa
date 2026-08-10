@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, BookOpen, LayoutGrid } from 'lucide-react'
+import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, BookOpen, Menu } from 'lucide-react'
 import { Button } from '@heroui/react'
 import { useFeedCount, useForumList, useIsInFeed, useTimelineList, useToggleFeed } from '../hooks/useApi'
 import { useThreadViewStore } from '../store/threadView'
@@ -81,30 +81,31 @@ export default function NavBar() {
   })()
 
   return (
-    <header className="shrink-0 z-40 bg-background/90 backdrop-blur-md border-b border-divider">
+    <header className="shrink-0 z-40 bg-background/90 backdrop-blur-md">
       <div className="flex items-center h-12 px-2 gap-1 max-w-3xl mx-auto w-full">
         {isFeed && (
           <Button
             isIconOnly
             variant="ghost"
             size="sm"
+            className="shrink-0"
             onPress={() => setSidebarOpen(true)}
             aria-label="切换版块"
           >
-            <LayoutGrid size={18} />
+            <Menu size={18} />
           </Button>
         )}
         {isThread && (
-          <Button isIconOnly variant="ghost" size="sm" onPress={goBack} aria-label="返回">
+          <Button isIconOnly variant="ghost" size="sm" className="shrink-0" onPress={goBack} aria-label="返回">
             <ArrowLeft size={18} />
           </Button>
         )}
-        <h1 className="text-sm font-medium text-foreground truncate ml-1">{title}</h1>
+        <h1 className="text-sm font-medium text-foreground truncate ml-1 min-w-0">{title}</h1>
 
-        <div className="flex-1" />
+        <div className="flex-1 min-w-0" />
 
         {isThread && (
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-0.5 shrink-0">
             <button onClick={() => nav(`${loc.pathname}${poOnly ? '' : '?po=1'}`, { replace: true })}
               className={`flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] transition-all ${poOnly ? 'bg-accent text-accent-foreground' : 'text-muted hover:bg-default-100'}`}>
               <Eye size={12} />PO
@@ -153,7 +154,7 @@ export default function NavBar() {
         )}
 
         {isForum && (
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-0.5 shrink-0">
             <button onClick={() => useForumViewStore.getState().setCreateThreadOpen(true)}
               className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] text-accent font-medium hover:bg-accent-50 dark:hover:bg-accent-900/20">
               <PencilLine size={12} />发新串
@@ -161,17 +162,17 @@ export default function NavBar() {
           </div>
         )}
         {loc.pathname.startsWith('/favorites') && (
-          <Button isIconOnly variant="ghost" size="sm" onPress={() => nav(`/favorites${loc.search.includes('search=1') ? '' : '?search=1'}`, { replace: true })} aria-label="搜索">
+          <Button isIconOnly variant="ghost" size="sm" className="shrink-0" onPress={() => nav(`/favorites${loc.search.includes('search=1') ? '' : '?search=1'}`, { replace: true })} aria-label="搜索">
             <SearchIcon size={18} />
           </Button>
         )}
         {loc.pathname.startsWith('/history') && (
-          <Button isIconOnly variant="ghost" size="sm" onPress={() => nav(`/history${loc.search.includes('search=1') ? '' : '?search=1'}`, { replace: true })} aria-label="搜索">
+          <Button isIconOnly variant="ghost" size="sm" className="shrink-0" onPress={() => nav(`/history${loc.search.includes('search=1') ? '' : '?search=1'}`, { replace: true })} aria-label="搜索">
             <SearchIcon size={18} />
           </Button>
         )}
         {loc.pathname.startsWith('/history') && historyCount > 0 && (
-          <Button isIconOnly variant="ghost" size="sm" onPress={() => { if (confirm('清空所有历史？')) clearHistory() }} aria-label="清空历史">
+          <Button isIconOnly variant="ghost" size="sm" className="shrink-0" onPress={() => { if (confirm('清空所有历史？')) clearHistory() }} aria-label="清空历史">
             <Trash2 size={18} />
           </Button>
         )}

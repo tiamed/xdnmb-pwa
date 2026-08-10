@@ -1,32 +1,33 @@
-import { useState, useRef } from 'react'
-import { Star, MessageSquare, ChevronRight, X } from 'lucide-react'
+import { useState } from 'react'
+import { Star, MessageSquare, ChevronRight } from 'lucide-react'
 import { Chip } from '@heroui/react'
 import { getImageUrl } from '../api/client'
 import type { ForumThread } from '../types/api'
 import { stripHtml, truncateText, formatTime } from '../hooks/useUtils'
 import { useSettingsStore } from '../store/settings'
 import { useIsInFeed, useToggleFeed } from '../hooks/useApi'
-interface Props { thread: ForumThread; forumName?: string; onOpen?: () => void }
+import ImageViewer from './ImageViewer'
 
-export default function ThreadCard({ thread, forumName, onOpen }: Props) {
+interface Props { thread: ForumThread; forumName?: string; showStar?: boolean; onOpen?: () => void }
+
+export default function ThreadCard({ thread, forumName, showStar = true, onOpen }: Props) {
   const { imageMode } = useSettingsStore()
-  const fav = useIsInFeed(thread.id)
+  const fav = useIsInFeed(showStar ? thread.id : '')
   const { toggle: toggleFeed } = useToggleFeed()
   const [imgLoaded, setImgLoaded] = useState(false)
   const [imgError, setImgError] = useState(false)
   const [viewerOpen, setViewerOpen] = useState(false)
-  const [zoom, setZoom] = useState(1)
-  const [pos, setPos] = useState({ x: 0, y: 0 })
-  const touchRef = useRef<{ x: number; y: number; dist: number; zoom: number; px: number; py: number } | null>(null)
-  const dragMoved = useRef(false)
   const preview = stripHtml(thread.content)
   const hasImage = thread.img && thread.ext
   const rc = Number(thread.ReplyCount || 0)
 
   return (
     <>
-      <div onClick={onOpen}
-        className="px-3 py-2.5 border-b border-divider cursor-pointer hover:bg-default-50 active:bg-default-100 active:scale-[0.99] transition-all duration-150 origin-left">
+      <div
+        data-tid={thread.id}
+        onClick={onOpen}
+        className="px-3 py-2.5 border-b border-divider cursor-pointer hover:bg-default-50 active:bg-default-100 active:scale-[0.99] transition-all duration-150 origin-left"
+      >
         <div className="flex gap-2.5">
           {hasImage && imageMode !== 'hidden' && (
             <div onClick={e => { e.stopPropagation(); setViewerOpen(true) }}
@@ -52,14 +53,16 @@ export default function ThreadCard({ thread, forumName, onOpen }: Props) {
                   {forumName && <Chip size="sm" variant="soft" color="accent" className="h-4 text-[10px]">{forumName}</Chip>}
                 </div>
               </div>
-              <button onClick={e => {
-                e.stopPropagation()
-                void toggleFeed(thread.id, fav)
-              }}
-                className={`shrink-0 p-1 rounded-lg transition-colors ${fav ? 'text-warning bg-warning-50 dark:bg-warning-900/20' : 'text-default-300 hover:text-warning-400'}`}
-                aria-label={fav ? '取消订阅' : '订阅'}>
-                <Star size={15} fill={fav ? 'currentColor' : 'none'} />
-              </button>
+              {showStar && (
+                <button onClick={e => {
+                  e.stopPropagation()
+                  void toggleFeed(thread.id, fav)
+                }}
+                  className={`shrink-0 p-1 rounded-lg transition-colors ${fav ? 'text-warning bg-warning-50 dark:bg-warning-900/20' : 'text-default-300 hover:text-warning-400'}`}
+                  aria-label={fav ? '取消订阅' : '订阅'}>
+                  <Star size={15} fill={fav ? 'currentColor' : 'none'} />
+                </button>
+              )}
             </div>
             <p className="text-sm text-muted mt-1 line-clamp-2 leading-relaxed break-all">{truncateText(preview, 120)}</p>
             <div className="flex items-center justify-between mt-1.5">
@@ -84,51 +87,10 @@ export default function ThreadCard({ thread, forumName, onOpen }: Props) {
       </div>
 
       {viewerOpen && (
-        <div className="fixed inset-0 z-[90] bg-black/80 flex items-center justify-center" onClick={() => setViewerOpen(false)}>
-          <button onClick={() => setViewerOpen(false)} className="absolute top-4 right-4 z-10 p-2 bg-black/40 rounded-full text-white hover:bg-black/60 transition-colors">
-            <X size={20} />
-          </button>
-          <div onClick={e => e.stopPropagation()} className="w-screen h-screen overflow-hidden select-none flex items-center justify-center">
-            <img src={getImageUrl(thread.img, thread.ext)} alt=""
-              onWheel={e => setZoom(z => Math.max(0.5, Math.min(10, z - e.deltaY * 0.005)))}
-              className="max-w-full max-h-full object-contain cursor-grab active:cursor-grabbing"
-              style={{ transform: `scale(${zoom}) translate(${pos.x / zoom}px, ${pos.y / zoom}px)` }}
-              onMouseDown={e => {
-                if (e.button !== 0) return
-                dragMoved.current = false
-                const sx = e.clientX - pos.x, sy = e.clientY - pos.y
-                const mv = (e: MouseEvent) => { dragMoved.current = true; setPos({ x: e.clientX - sx, y: e.clientY - sy }) }
-                const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up) }
-                document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up)
-              }}
-              onTouchStart={e => {
-                if (e.touches.length === 1) {
-                  touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, dist: 0, zoom, px: pos.x, py: pos.y }
-                } else if (e.touches.length === 2) {
-                  const dx = e.touches[0].clientX - e.touches[1].clientX
-                  const dy = e.touches[0].clientY - e.touches[1].clientY
-                  touchRef.current = { x: 0, y: 0, dist: Math.hypot(dx, dy), zoom, px: pos.x, py: pos.y }
-                }
-              }}
-              onTouchMove={e => {
-                const cur = touchRef.current
-                if (!cur) return
-                if (e.touches.length === 1) {
-                  const dx = e.touches[0].clientX - cur.x
-                  const dy = e.touches[0].clientY - cur.y
-                  setPos({ x: cur.px + dx, y: cur.py + dy })
-                } else if (e.touches.length === 2) {
-                  const dx = e.touches[0].clientX - e.touches[1].clientX
-                  const dy = e.touches[0].clientY - e.touches[1].clientY
-                  const dist = Math.hypot(dx, dy)
-                  const scale = dist / cur.dist
-                  setZoom(Math.max(0.5, Math.min(10, cur.zoom * scale)))
-                }
-              }}
-              onTouchEnd={() => { touchRef.current = null }}
-              onClick={() => { if (!dragMoved.current) setViewerOpen(false) }} />
-          </div>
-        </div>
+        <ImageViewer
+          src={getImageUrl(thread.img, thread.ext)}
+          onClose={() => setViewerOpen(false)}
+        />
       )}
     </>
   )

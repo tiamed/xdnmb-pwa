@@ -8,10 +8,12 @@ import { getThread } from '../api/client'
 import PostItem from '../components/PostItem'
 import ReferencePopup from '../components/ReferencePopup'
 import { ListSkeleton } from '../components/Skeleton'
+import PullRefreshIndicator from '../components/PullRefreshIndicator'
 import { useThreadViewStore } from '../store/threadView'
 import { useThreadProgressStore } from '../store/threadProgress'
 import { useHistoryStore } from '../store/history'
 import { resolveForumName, stripHtml, truncateText } from '../hooks/useUtils'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import type { Post, Thread } from '../types/api'
 
 const PAGE_SIZE = 19
@@ -72,6 +74,12 @@ export default function ThreadViewPage() {
     error,
     refetch,
   } = useInfiniteThread(tid)
+
+  // Pull-to-refresh only on the first page so it doesn't fight "load previous"
+  const { pull, refreshing, threshold } = usePullToRefresh({
+    enabled: !!tid && !isLoading && !hasPreviousPage && !isFetchingPreviousPage,
+    onRefresh: () => refetch(),
+  })
 
   const pageParams = (data?.pageParams ?? []) as number[]
   const firstPageParam = pageParams[0] ?? 1
@@ -486,6 +494,7 @@ export default function ThreadViewPage() {
 
   return (
     <div className="min-h-full page-enter pb-4">
+      <PullRefreshIndicator pull={pull} refreshing={refreshing} threshold={threshold} />
       <div ref={topSentinelRef} className="h-px" />
 
       {hasPreviousPage && (

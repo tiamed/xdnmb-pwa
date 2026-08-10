@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Reply, ImageOff, X, ZoomIn } from 'lucide-react'
+import { Reply, ImageOff, ZoomIn } from 'lucide-react'
 import { Chip } from '@heroui/react'
 import { getImageUrl } from '../api/client'
 import { useSettingsStore } from '../store/settings'
 import { formatTime } from '../hooks/useUtils'
+import ImageViewer from './ImageViewer'
 import type { Post, Reference } from '../types/api'
 
 interface Props {
@@ -23,11 +24,7 @@ export default function PostItem({ post, isPo = false, poHash, forumName, onQuot
   const [imgError, setImgError] = useState(false)
   const [showImg, setShowImg] = useState(imageMode !== 'blur')
   const [viewerOpen, setViewerOpen] = useState(false)
-  const [zoom, setZoom] = useState(1)
-  const [pos, setPos] = useState({ x: 0, y: 0 })
   const [actionSheetOpen, setActionSheetOpen] = useState(false)
-  const touchRef = useRef<{ x: number; y: number; dist: number; zoom: number; px: number; py: number } | null>(null)
-  const dragMoved = useRef(false)
 
   const hasImage = post.img && post.ext
   const isPoMain = isPo || post.user_hash === poHash
@@ -152,58 +149,11 @@ export default function PostItem({ post, isPo = false, poHash, forumName, onQuot
         document.body
       )}
 
-      {viewerOpen && createPortal(
-        <div className="fixed inset-0 z-[90] bg-black/80 flex items-center justify-center" onClick={() => setViewerOpen(false)}>
-          <button onClick={() => setViewerOpen(false)}
-            className="absolute top-4 right-4 z-10 p-2 bg-black/40 rounded-full text-white hover:bg-black/60 transition-colors">
-            <X size={20} />
-          </button>
-          <div className="text-white/60 text-xs absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/40 rounded-full px-3 py-1 pointer-events-none">
-            滚轮缩放 · 拖拽移动 · 单击关闭
-          </div>
-          <div onClick={e => e.stopPropagation()} className="w-screen h-screen overflow-hidden select-none flex items-center justify-center">
-            <img src={getImageUrl(post.img, post.ext)} alt=""
-              className="max-w-full max-h-full object-contain cursor-grab active:cursor-grabbing"
-              style={{ transform: `scale(${zoom}) translate(${pos.x / zoom}px, ${pos.y / zoom}px)` }}
-              onWheel={e => setZoom(z => Math.max(0.5, Math.min(10, z - e.deltaY * 0.005)))}
-              onMouseDown={e => {
-                if (e.button !== 0) return
-                dragMoved.current = false
-                const sx = e.clientX - pos.x, sy = e.clientY - pos.y
-                const mv = (e: MouseEvent) => { dragMoved.current = true; setPos({ x: e.clientX - sx, y: e.clientY - sy }) }
-                const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up) }
-                document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up)
-              }}
-              onTouchStart={e => {
-                if (e.touches.length === 1) {
-                  touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, dist: 0, zoom, px: pos.x, py: pos.y }
-                } else if (e.touches.length === 2) {
-                  const dx = e.touches[0].clientX - e.touches[1].clientX
-                  const dy = e.touches[0].clientY - e.touches[1].clientY
-                  touchRef.current = { x: 0, y: 0, dist: Math.hypot(dx, dy), zoom, px: pos.x, py: pos.y }
-                }
-              }}
-              onTouchMove={e => {
-                const cur = touchRef.current
-                if (!cur) return
-                if (e.touches.length === 1) {
-                  const dx = e.touches[0].clientX - cur.x
-                  const dy = e.touches[0].clientY - cur.y
-                  setPos({ x: cur.px + dx, y: cur.py + dy })
-                } else if (e.touches.length === 2) {
-                  const dx = e.touches[0].clientX - e.touches[1].clientX
-                  const dy = e.touches[0].clientY - e.touches[1].clientY
-                  const dist = Math.hypot(dx, dy)
-                  const scale = dist / cur.dist
-                  setZoom(Math.max(0.5, Math.min(10, cur.zoom * scale)))
-                }
-              }}
-              onTouchEnd={() => { touchRef.current = null }}
-              onClick={() => { if (!dragMoved.current) setViewerOpen(false) }}
-            />
-          </div>
-        </div>,
-        document.body
+      {viewerOpen && (
+        <ImageViewer
+          src={getImageUrl(post.img, post.ext)}
+          onClose={() => setViewerOpen(false)}
+        />
       )}
     </>
   )

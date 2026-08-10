@@ -3,7 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useInfiniteTimelineThreads, useTimelineList } from '../hooks/useApi'
 import ThreadCard from '../components/ThreadCard'
 import { ListSkeleton } from '../components/Skeleton'
+import PullRefreshIndicator from '../components/PullRefreshIndicator'
 import { useSettingsStore } from '../store/settings'
+import { useListScrollRestore } from '../hooks/useListScrollRestore'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
+import { rememberListItem, useListScrollStore } from '../store/listScroll'
 import { updateUrls } from '../api/client'
 
 export default function HomePage() {
@@ -34,9 +38,28 @@ export default function HomePage() {
     if (tlId && tlId !== homeTimelineId) setHomeTimelineId(tlId)
   }, [tlId, homeTimelineId, setHomeTimelineId])
 
-  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error } =
+  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error, refetch } =
     useInfiniteTimelineThreads(tlId)
   const threads = data?.pages.flat() ?? []
+  const itemIds = useMemo(() => threads.map(t => t.id), [threads])
+  const scrollKey = `timeline:${tlId}`
+
+  useListScrollRestore(scrollKey, !isLoading && !!tlId && threads.length > 0, {
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    contentKey: threads.length,
+    itemIds,
+  })
+
+  const { pull, refreshing, threshold } = usePullToRefresh({
+    enabled: !!tlId && !isLoading,
+    onRefresh: async () => {
+      useListScrollStore.getState().clear(scrollKey)
+      document.getElementById('main-scroll-container')?.scrollTo({ top: 0 })
+      await refetch()
+    },
+  })
 
   useEffect(() => {
     if (!autoLoadNext || !hasNextPage || isFetchingNextPage) return
@@ -49,6 +72,11 @@ export default function HomePage() {
     return () => el.removeEventListener('scroll', h)
   }, [autoLoadNext, hasNextPage, isFetchingNextPage, fetchNextPage])
 
+  const openThread = (id: string) => {
+    rememberListItem(scrollKey, id)
+    nav(`/t/${id}`)
+  }
+
   if (error) return <div className="py-20 text-center text-danger text-sm">加载失败</div>
   if (!tlId && timelines && timelines.length === 0) {
     return <div className="py-20 text-center text-muted text-sm">暂无时间线</div>
@@ -56,12 +84,13 @@ export default function HomePage() {
 
   return (
     <div className="min-h-full page-enter">
+      <PullRefreshIndicator pull={pull} refreshing={refreshing} threshold={threshold} />
       {isLoading || !tlId ? (
         <ListSkeleton count={6} />
       ) : (
         <div>
           {threads.map(thread => (
-            <ThreadCard key={thread.id} thread={thread} onOpen={() => nav(`/t/${thread.id}`)} />
+            <ThreadCard key={thread.id} thread={thread} showStar={false} onOpen={() => openThread(thread.id)} />
           ))}
           <div className="p-4 text-center text-sm text-muted">
             {isFetchingNextPage ? '加载中…' : !hasNextPage && threads.length > 0 ? '— 没有更多了 —' : !autoLoadNext && hasNextPage ? (

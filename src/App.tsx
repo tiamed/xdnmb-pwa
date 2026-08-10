@@ -20,8 +20,9 @@ function App() {
   useLayoutEffect(() => { useSettingsStore.getState().applyTheme() }, [])
 
   useLayoutEffect(() => {
-    // Thread view restores its own reading position after data loads
+    // These routes restore their own scroll position
     if (location.pathname.startsWith('/t/')) return
+    if (location.pathname === '/' || location.pathname.startsWith('/timeline/')) return
     mainRef.current?.scrollTo(0, 0)
   }, [location.pathname])
 
