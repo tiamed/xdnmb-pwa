@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useInfiniteTimelineThreads, useTimelineList } from '../hooks/useApi'
 import ThreadCard from '../components/ThreadCard'
@@ -12,6 +12,7 @@ import { updateUrls } from '../api/client'
 
 export default function HomePage() {
   const nav = useNavigate()
+  const ptrRef = useRef<HTMLDivElement>(null)
   const { data: timelines } = useTimelineList()
   const homeTimelineId = useSettingsStore(s => s.homeTimelineId)
   const setHomeTimelineId = useSettingsStore(s => s.setHomeTimelineId)
@@ -52,8 +53,9 @@ export default function HomePage() {
     itemIds,
   })
 
-  const { pull, refreshing, threshold } = usePullToRefresh({
+  usePullToRefresh({
     enabled: !!tlId && !isLoading,
+    indicatorRef: ptrRef,
     onRefresh: async () => {
       useListScrollStore.getState().clear(scrollKey)
       document.getElementById('main-scroll-container')?.scrollTo({ top: 0 })
@@ -84,7 +86,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-full page-enter">
-      <PullRefreshIndicator pull={pull} refreshing={refreshing} threshold={threshold} />
+      <PullRefreshIndicator ref={ptrRef} />
       {isLoading || !tlId ? (
         <ListSkeleton count={6} />
       ) : (

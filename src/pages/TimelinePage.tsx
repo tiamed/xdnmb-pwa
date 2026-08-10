@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useInfiniteTimelineThreads } from '../hooks/useApi'
 import ThreadCard from '../components/ThreadCard'
@@ -12,6 +12,7 @@ import { rememberListItem, useListScrollStore } from '../store/listScroll'
 export default function TimelinePage() {
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
+  const ptrRef = useRef<HTMLDivElement>(null)
   const tlId = id || ''
   const { autoLoadNext } = useSettingsStore()
 
@@ -29,8 +30,9 @@ export default function TimelinePage() {
     itemIds,
   })
 
-  const { pull, refreshing, threshold } = usePullToRefresh({
+  usePullToRefresh({
     enabled: !!tlId && !isLoading,
+    indicatorRef: ptrRef,
     onRefresh: async () => {
       useListScrollStore.getState().clear(scrollKey)
       document.getElementById('main-scroll-container')?.scrollTo({ top: 0 })
@@ -56,7 +58,7 @@ export default function TimelinePage() {
 
   return (
     <div className="min-h-full page-enter">
-      <PullRefreshIndicator pull={pull} refreshing={refreshing} threshold={threshold} />
+      <PullRefreshIndicator ref={ptrRef} />
       {isLoading ? <ListSkeleton count={6} /> : (
         <div>
           {threads.map(thread => (

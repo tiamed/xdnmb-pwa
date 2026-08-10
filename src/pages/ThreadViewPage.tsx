@@ -61,6 +61,7 @@ export default function ThreadViewPage() {
   const pendingRestoreRef = useRef<{ page: number; postId: string | null; offset: number } | null>(null)
   const restoreDoneRef = useRef(false)
   const restoreKickoffTidRef = useRef('')
+  const ptrRef = useRef<HTMLDivElement>(null)
 
   const {
     data,
@@ -76,8 +77,9 @@ export default function ThreadViewPage() {
   } = useInfiniteThread(tid)
 
   // Pull-to-refresh only on the first page so it doesn't fight "load previous"
-  const { pull, refreshing, threshold } = usePullToRefresh({
+  usePullToRefresh({
     enabled: !!tid && !isLoading && !hasPreviousPage && !isFetchingPreviousPage,
+    indicatorRef: ptrRef,
     onRefresh: () => refetch(),
   })
 
@@ -494,7 +496,7 @@ export default function ThreadViewPage() {
 
   return (
     <div className="min-h-full page-enter pb-4">
-      <PullRefreshIndicator pull={pull} refreshing={refreshing} threshold={threshold} />
+      <PullRefreshIndicator ref={ptrRef} />
       <div ref={topSentinelRef} className="h-px" />
 
       {hasPreviousPage && (

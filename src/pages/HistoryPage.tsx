@@ -73,7 +73,7 @@ export default function HistoryPage() {
             onMouseLeave={cancelLongPress}
             onContextMenu={e => { e.preventDefault(); setActionTarget(item.id) }}
             className="px-3 py-2.5 border-b border-divider cursor-pointer hover:bg-default-50 active:bg-default-100 active:scale-[0.99] transition-all duration-150 origin-left">
-            <h3 className="font-medium text-foreground truncate text-sm">{item.title}</h3>
+            <h3 className="font-medium text-foreground truncate text-sm">{item.title?.trim() || '无标题'}</h3>
             <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted">
               <span className="text-accent font-mono">No.{item.id}</span>
               {name && <Chip size="sm" variant="soft" color="accent" className="h-4 text-[10px]">{name}</Chip>}

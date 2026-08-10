@@ -1,16 +1,19 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Star, X, Search as SearchIcon, Loader2 } from 'lucide-react'
 import { Chip } from '@heroui/react'
 import { useFeedUuid, useForumList, useInfiniteFeed } from '../hooks/useApi'
-import { resolveForumName, stripHtml } from '../hooks/useUtils'
+import { resolveForumName, stripHtml, formatTime } from '../hooks/useUtils'
 import { useSettingsStore } from '../store/settings'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
+import PullRefreshIndicator from '../components/PullRefreshIndicator'
 import type { FeedItem } from '../types/api'
 
 export default function FavoritesPage() {
   const nav = useNavigate()
   const [sp, setSp] = useSearchParams()
   const feedId = useFeedUuid()
+  const ptrRef = useRef<HTMLDivElement>(null)
   const { data: forumGroups } = useForumList()
   const autoLoadNext = useSettingsStore((s) => s.autoLoadNext)
   const {
@@ -30,6 +33,12 @@ export default function FavoritesPage() {
     () => data?.pages.flat() ?? [],
     [data],
   )
+
+  usePullToRefresh({
+    enabled: !!feedId && !isLoading,
+    indicatorRef: ptrRef,
+    onRefresh: () => refetch(),
+  })
 
   // 搜索时尽量拉全部分页，避免只搜到已加载页
   useEffect(() => {
@@ -91,6 +100,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="min-h-full page-enter">
+      <PullRefreshIndicator ref={ptrRef} />
       {searchMode && (
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md px-3 py-2 border-b border-divider">
           <div className="flex items-center gap-2">
@@ -166,7 +176,7 @@ function FeedRow({
       className="px-3 py-2.5 border-b border-divider cursor-pointer hover:bg-default-50 active:bg-default-100 active:scale-[0.99] transition-all duration-150 origin-left"
     >
       <h3 className="font-medium text-foreground truncate text-sm">
-        {item.title && item.title !== '无标题' ? item.title : `No.${item.id}`}
+        {item.title?.trim() || '无标题'}
       </h3>
       <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted">
         <span className="text-accent font-mono">No.{item.id}</span>
@@ -175,6 +185,7 @@ function FeedRow({
             {forumName}
           </Chip>
         )}
+        {item.now && <span className="ml-auto">{formatTime(item.now)}</span>}
       </div>
       <p className="text-sm text-muted mt-1 line-clamp-2 break-all">{stripHtml(item.content)}</p>
     </div>
