@@ -11,12 +11,13 @@ interface Props {
   post: Post | Reference
   isPo?: boolean
   poHash?: string
+  forumName?: string
   onQuoteClick?: (id: string) => void
   showReply?: boolean
   onReply?: (id: string) => void
 }
 
-export default function PostItem({ post, isPo = false, poHash, onQuoteClick, showReply = true, onReply }: Props) {
+export default function PostItem({ post, isPo = false, poHash, forumName, onQuoteClick, showReply = true, onReply }: Props) {
   const { imageMode, showSpoiler } = useSettingsStore()
   const [imgLoaded, setImgLoaded] = useState(false)
   const [imgError, setImgError] = useState(false)
@@ -84,6 +85,9 @@ export default function PostItem({ post, isPo = false, poHash, onQuoteClick, sho
             </span>
             {isPoMain && !isTip && (
               <Chip size="sm" variant="soft" color="accent" className="h-4 text-[10px]">楼主</Chip>
+            )}
+            {forumName && (
+              <Chip size="sm" variant="soft" color="accent" className="h-4 text-[10px]">{forumName}</Chip>
             )}
             {(post as Post).name && (post as Post).name !== '无名氏' && (
               <span className="text-muted">{(post as Post).name}</span>

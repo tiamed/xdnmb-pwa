@@ -2,20 +2,35 @@ import { useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Clock, X, Search as SearchIcon, Trash2 } from 'lucide-react'
 import { Chip } from '@heroui/react'
+import { useForumList } from '../hooks/useApi'
 import { useHistoryStore } from '../store/history'
+import { resolveForumName } from '../hooks/useUtils'
 
 
 export default function HistoryPage() {
   const nav = useNavigate()
   const [sp, setSp] = useSearchParams()
   const { items, removeHistory } = useHistoryStore()
+  const { data: forumGroups } = useForumList()
   const searchMode = sp.get('search') === '1'
   const [searchQuery, setSearchQuery] = useState('')
   const [actionTarget, setActionTarget] = useState<string | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
+  const forumLabel = (item: { forumName?: string; forumId?: string }) =>
+    item.forumName || resolveForumName(forumGroups, item.forumId)
+
   const q = searchQuery.toLowerCase()
-  const filtered = items.filter(i => !q || String(i.title ?? '').toLowerCase().includes(q) || String(i.preview ?? '').toLowerCase().includes(q) || String(i.id ?? '').includes(q) || String(i.forumName ?? '').toLowerCase().includes(q))
+  const filtered = items.filter(i => {
+    if (!q) return true
+    const name = forumLabel(i).toLowerCase()
+    return (
+      String(i.title ?? '').toLowerCase().includes(q) ||
+      String(i.preview ?? '').toLowerCase().includes(q) ||
+      String(i.id ?? '').includes(q) ||
+      name.includes(q)
+    )
+  })
 
   const closeSearch = () => {
     setSp({})
@@ -46,7 +61,9 @@ export default function HistoryPage() {
       ) : filtered.length === 0 ? (
         <div className="py-20 text-center text-muted"><p>没有匹配的历史</p></div>
       ) : (
-        <div>{filtered.map(item => (
+        <div>{filtered.map(item => {
+          const name = forumLabel(item)
+          return (
           <div key={item.id} onClick={() => nav(`/t/${item.id}`)}
             onTouchStart={() => startLongPress(item.id)}
             onTouchEnd={cancelLongPress}
@@ -59,12 +76,13 @@ export default function HistoryPage() {
             <h3 className="font-medium text-foreground truncate text-sm">{item.title}</h3>
             <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted">
               <span className="text-accent font-mono">No.{item.id}</span>
-              {item.forumName && <Chip size="sm" variant="soft" color="accent" className="h-4 text-[10px]">{item.forumName}</Chip>}
+              {name && <Chip size="sm" variant="soft" color="accent" className="h-4 text-[10px]">{name}</Chip>}
               <span className="ml-auto">{new Date(item.visitedAt).toLocaleString()}</span>
             </div>
             <p className="text-sm text-muted mt-1 line-clamp-2 break-all">{item.preview}</p>
           </div>
-        ))}</div>
+          )
+        })}</div>
       )}
 
       {/* Long press action sheet */}

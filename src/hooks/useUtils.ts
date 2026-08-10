@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { ForumGroup } from '../types/api'
 
 /**
  * 解析内容中的 >>No.xxxx 引用
@@ -11,6 +12,22 @@ export function parseContentReferences(content: string): string[] {
     matches.push(m[1])
   }
   return matches
+}
+
+/**
+ * 根据 fid 在版块列表中查找版块名称
+ */
+export function resolveForumName(
+  forumGroups: ForumGroup[] | undefined,
+  fid: string | number | undefined | null,
+): string {
+  if (!forumGroups || fid == null || fid === '') return ''
+  const id = String(fid)
+  for (const g of forumGroups) {
+    const f = g.forums.find(x => String(x.id) === id)
+    if (f) return f.name
+  }
+  return ''
 }
 
 /**

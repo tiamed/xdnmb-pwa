@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Star, X, Search as SearchIcon, Loader2 } from 'lucide-react'
 import { Chip } from '@heroui/react'
-import { useFeedUuid, useInfiniteFeed } from '../hooks/useApi'
-import { stripHtml } from '../hooks/useUtils'
+import { useFeedUuid, useForumList, useInfiniteFeed } from '../hooks/useApi'
+import { resolveForumName, stripHtml } from '../hooks/useUtils'
 import { useSettingsStore } from '../store/settings'
 import type { FeedItem } from '../types/api'
 
@@ -11,6 +11,7 @@ export default function FavoritesPage() {
   const nav = useNavigate()
   const [sp, setSp] = useSearchParams()
   const feedId = useFeedUuid()
+  const { data: forumGroups } = useForumList()
   const autoLoadNext = useSettingsStore((s) => s.autoLoadNext)
   const {
     data,
@@ -120,7 +121,12 @@ export default function FavoritesPage() {
       ) : (
         <div>
           {filtered.map((item) => (
-            <FeedRow key={item.id} item={item} onOpen={() => nav(`/t/${item.id}`)} />
+            <FeedRow
+              key={item.id}
+              item={item}
+              forumName={resolveForumName(forumGroups, item.fid)}
+              onOpen={() => nav(`/t/${item.id}`)}
+            />
           ))}
           {hasNextPage && !searchMode && (
             <div className="py-4 text-center">
@@ -145,7 +151,15 @@ export default function FavoritesPage() {
   )
 }
 
-function FeedRow({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
+function FeedRow({
+  item,
+  forumName,
+  onOpen,
+}: {
+  item: FeedItem
+  forumName: string
+  onOpen: () => void
+}) {
   return (
     <div
       onClick={onOpen}
@@ -156,9 +170,9 @@ function FeedRow({ item, onOpen }: { item: FeedItem; onOpen: () => void }) {
       </h3>
       <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted">
         <span className="text-accent font-mono">No.{item.id}</span>
-        {item.fid && (
+        {forumName && (
           <Chip size="sm" variant="soft" color="accent" className="h-4 text-[10px]">
-            fid:{item.fid}
+            {forumName}
           </Chip>
         )}
       </div>

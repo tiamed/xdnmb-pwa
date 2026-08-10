@@ -18,6 +18,8 @@ interface SettingsState {
   autoLoadNext: boolean
   showSpoiler: boolean
   feedUuid: string
+  /** 首页时间线 id；空则用列表第一项 */
+  homeTimelineId: string
   cookies: UserCookie[]
   activeCookieId: string | null
   setTheme: (theme: ThemeMode) => void
@@ -26,6 +28,7 @@ interface SettingsState {
   setAutoLoadNext: (v: boolean) => void
   setShowSpoiler: (v: boolean) => void
   setFeedUuid: (uuid: string) => void
+  setHomeTimelineId: (id: string) => void
   addCookie: (label: string, hash: string) => void
   updateCookie: (id: string, patch: Partial<Omit<UserCookie, 'id'>>) => void
   removeCookie: (id: string) => void
@@ -44,6 +47,7 @@ export const useSettingsStore = create<SettingsState>()(
       autoLoadNext: true,
       showSpoiler: false,
       feedUuid: '',
+      homeTimelineId: '',
       cookies: [],
       activeCookieId: null,
 
@@ -56,6 +60,7 @@ export const useSettingsStore = create<SettingsState>()(
       setAutoLoadNext: (autoLoadNext) => set({ autoLoadNext }),
       setShowSpoiler: (showSpoiler) => set({ showSpoiler }),
       setFeedUuid: (feedUuid) => set({ feedUuid }),
+      setHomeTimelineId: (homeTimelineId) => set({ homeTimelineId }),
 
       addCookie: (label, hash) => set((s) => {
         const c: UserCookie = {
@@ -97,6 +102,7 @@ export const useSettingsStore = create<SettingsState>()(
         autoLoadNext: state.autoLoadNext,
         showSpoiler: state.showSpoiler,
         feedUuid: state.feedUuid,
+        homeTimelineId: state.homeTimelineId,
         cookies: state.cookies,
         activeCookieId: state.activeCookieId,
       }),

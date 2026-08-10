@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, BookOpen } from 'lucide-react'
+import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, BookOpen, LayoutGrid } from 'lucide-react'
 import { Button } from '@heroui/react'
 import { useFeedCount, useForumList, useIsInFeed, useTimelineList, useToggleFeed } from '../hooks/useApi'
 import { useThreadViewStore } from '../store/threadView'
 import { useForumViewStore } from '../store/forumView'
 import { useHistoryStore } from '../store/history'
+import { useSettingsStore } from '../store/settings'
 
 export default function NavBar() {
   const nav = useNavigate()
@@ -26,7 +27,7 @@ export default function NavBar() {
   const isThread = loc.pathname.startsWith('/t/')
   const tid = isThread ? loc.pathname.split('/')[2] : ''
   const poOnly = loc.search.includes('po=1')
-  const { currentPage, totalPages, setJumpToPage } = useThreadViewStore()
+  const { currentPage, totalPages, setJumpToPage, threadTitle } = useThreadViewStore()
   const { data: forumGroups } = useForumList()
   const { data: timelines } = useTimelineList()
   const fav = useIsInFeed(tid)
@@ -34,12 +35,15 @@ export default function NavBar() {
   const favCount = useFeedCount()
   const historyCount = useHistoryStore(s => s.items.length)
   const clearHistory = useHistoryStore(s => s.clearHistory)
+  const homeTimelineId = useSettingsStore(s => s.homeTimelineId)
+  const setSidebarOpen = useForumViewStore(s => s.setSidebarOpen)
 
-  const isDetail = isThread || loc.pathname.startsWith('/f/') || loc.pathname.startsWith('/timeline/')
+  const isForum = loc.pathname.startsWith('/f/')
+  const isTimeline = loc.pathname.startsWith('/timeline/')
+  const isHome = loc.pathname === '/'
+  const isFeed = isHome || isForum || isTimeline
 
   const goBack = () => {
-    // React Router stores an in-app index on history.state; idx 0 / missing means
-    // this is the first entry (common in standalone PWA / deep link) — fall back home.
     const idx = (window.history.state as { idx?: number } | null)?.idx
     if (typeof idx === 'number' && idx > 0) {
       nav(-1)
@@ -48,21 +52,28 @@ export default function NavBar() {
     nav('/', { replace: true })
   }
 
-  const forumId = loc.pathname.startsWith('/f/') ? loc.pathname.split('/')[2] : ''
+  const forumId = isForum ? loc.pathname.split('/')[2] : ''
   let forumName = ''
   if (forumGroups) for (const g of forumGroups) { const f = g.forums.find(f => f.id === forumId); if (f) { forumName = f.name; break } }
 
-  const timelineId = loc.pathname.startsWith('/timeline/') ? loc.pathname.split('/')[2] : ''
+  const timelineId = isTimeline
+    ? loc.pathname.split('/')[2]
+    : isHome
+      ? homeTimelineId
+      : ''
   let timelineName = ''
-  if (timelines) {
-    const t = timelines.find(tl => String(tl.id) === timelineId)
+  if (timelines && timelineId) {
+    const t = timelines.find(tl => String(tl.id) === String(timelineId))
     if (t) timelineName = t.display_name || t.name
   }
 
   const title = (() => {
-    if (isThread) return '串详情'
-    if (loc.pathname.startsWith('/f/')) return forumName || `版块 ${forumId}`
-    if (loc.pathname.startsWith('/timeline/')) return timelineName || '时间线'
+    if (isThread) {
+      if (threadTitle && threadTitle !== '无标题') return threadTitle
+      return tid ? `No.${tid}` : '串详情'
+    }
+    if (isForum) return forumName || `版块 ${forumId}`
+    if (isHome || isTimeline) return timelineName || '时间线'
     if (loc.pathname.startsWith('/favorites')) return `收藏 (${favCount})`
     if (loc.pathname.startsWith('/history')) return `历史 (${historyCount})`
     if (loc.pathname.startsWith('/settings')) return '设置'
@@ -72,20 +83,26 @@ export default function NavBar() {
   return (
     <header className="shrink-0 z-40 bg-background/90 backdrop-blur-md border-b border-divider">
       <div className="flex items-center h-12 px-2 gap-1 max-w-3xl mx-auto w-full">
-        {isDetail && (
+        {isFeed && (
+          <Button
+            isIconOnly
+            variant="ghost"
+            size="sm"
+            onPress={() => setSidebarOpen(true)}
+            aria-label="切换版块"
+          >
+            <LayoutGrid size={18} />
+          </Button>
+        )}
+        {isThread && (
           <Button isIconOnly variant="ghost" size="sm" onPress={goBack} aria-label="返回">
             <ArrowLeft size={18} />
           </Button>
         )}
-        {loc.pathname === '/' ? (
-          <h1 onClick={() => nav('/')} className="text-lg font-bold text-accent cursor-pointer ml-1 shrink-0">X岛</h1>
-        ) : (
-          <h1 className="text-sm font-medium text-foreground truncate ml-1">{title}</h1>
-        )}
+        <h1 className="text-sm font-medium text-foreground truncate ml-1">{title}</h1>
 
         <div className="flex-1" />
 
-        {/* thread toolbar */}
         {isThread && (
           <div className="flex items-center gap-0.5">
             <button onClick={() => nav(`${loc.pathname}${poOnly ? '' : '?po=1'}`, { replace: true })}
@@ -135,8 +152,7 @@ export default function NavBar() {
           </div>
         )}
 
-        {/* forum (board) page toolbar */}
-        {loc.pathname.startsWith('/f/') && (
+        {isForum && (
           <div className="flex items-center gap-0.5">
             <button onClick={() => useForumViewStore.getState().setCreateThreadOpen(true)}
               className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] text-accent font-medium hover:bg-accent-50 dark:hover:bg-accent-900/20">

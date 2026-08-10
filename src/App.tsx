@@ -4,6 +4,7 @@ import { SearchX } from 'lucide-react'
 import { useSettingsStore } from './store/settings'
 import NavBar from './components/NavBar'
 import BottomNav from './components/BottomNav'
+import ForumSidebar from './components/ForumSidebar'
 import HomePage from './pages/HomePage'
 import ForumViewPage from './pages/ForumViewPage'
 import ThreadViewPage from './pages/ThreadViewPage'
@@ -50,6 +51,7 @@ function App() {
   return (
     <div className="h-dvh flex flex-col overflow-hidden">
       <NavBar />
+      <ForumSidebar />
       <main ref={mainRef} id="main-scroll-container" className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-none"
         style={{ paddingBottom: 'calc(52px + env(safe-area-inset-bottom, 0px))' }}>
         <Routes>

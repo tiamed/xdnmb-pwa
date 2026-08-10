@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } fr
 import { useParams, useSearchParams } from 'react-router-dom'
 import { Reply, Loader2 } from 'lucide-react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useInfiniteThread, useReplyThread } from '../hooks/useApi'
+import { useInfiniteThread, useReplyThread, useForumList } from '../hooks/useApi'
 import { useQueryClient } from '@tanstack/react-query'
 import { getThread } from '../api/client'
 import PostItem from '../components/PostItem'
@@ -11,7 +11,7 @@ import { ListSkeleton } from '../components/Skeleton'
 import { useThreadViewStore } from '../store/threadView'
 import { useThreadProgressStore } from '../store/threadProgress'
 import { useHistoryStore } from '../store/history'
-import { stripHtml, truncateText } from '../hooks/useUtils'
+import { resolveForumName, stripHtml, truncateText } from '../hooks/useUtils'
 import type { Post, Thread } from '../types/api'
 
 const PAGE_SIZE = 19
@@ -48,6 +48,7 @@ export default function ThreadViewPage() {
   const { addHistory } = useHistoryStore()
   const replyMutation = useReplyThread()
   const queryClient = useQueryClient()
+  const { data: forumGroups } = useForumList()
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const bottomSentinelRef = useRef<HTMLDivElement>(null)
   // After loading a previous page, stay locked until user scrolls away from top
@@ -80,6 +81,7 @@ export default function ThreadViewPage() {
   const total = Number(thread?.ReplyCount || 0)
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const poHash = thread?.user_hash
+  const forumName = resolveForumName(forumGroups, thread?.fid)
 
   const pageSlices = useMemo(() => {
     if (!data) return [] as { page: number; replies: Post[] }[]
@@ -398,7 +400,7 @@ export default function ThreadViewPage() {
       addHistory({
         id: thread.id,
         title: thread.title || '无标题',
-        forumName: '',
+        forumName: resolveForumName(forumGroups, thread.fid),
         forumId: thread.fid || '',
         preview: truncateText(stripHtml(thread.content), 100),
         img: thread.img,
@@ -408,7 +410,7 @@ export default function ThreadViewPage() {
       })
       setThreadTitle(thread.title || '无标题')
     }
-  }, [!!thread])
+  }, [!!thread, forumGroups])
 
   // 显示原串：滚动并高亮目标帖；若未加载则尽量跳到首页（楼主）
   useEffect(() => {
@@ -531,6 +533,7 @@ export default function ThreadViewPage() {
                     <PostItem
                       post={mainPost}
                       isPo
+                      forumName={forumName}
                       onQuoteClick={handleQuote}
                       onReply={id => {
                         setReplyTo(id)
