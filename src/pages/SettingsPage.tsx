@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useSettingsStore, type ImageMode, type ReplySort } from '../store/settings'
 import { getApiBaseUrl, setApiBase, getFeed } from '../api/client'
 import { Button } from '@heroui/react'
-import { Sun, Moon, Monitor, RefreshCw, Trash2, PlusCircle, Check } from 'lucide-react'
+import { Sun, Moon, Monitor, RefreshCw, Trash2, PlusCircle, Check, QrCode } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
+import CookieQrScanner from '../components/CookieQrScanner'
 
 export default function SettingsPage() {
   const {
@@ -22,13 +23,29 @@ export default function SettingsPage() {
   const [syncing, setSyncing] = useState(false)
   const [checking, setChecking] = useState(false)
   const [toast, setToast] = useState('')
+  const [qrOpen, setQrOpen] = useState(false)
+
+  const showToast = (msg: string, ms = 2000) => {
+    setToast(msg)
+    setTimeout(() => setToast(''), ms)
+  }
 
   const addNewCookie = () => {
     const h = newHash.trim()
-    if (!h) return
+    if (!h) {
+      showToast('请填写 userhash')
+      return
+    }
     addCookie(newLabel, h)
     setNewLabel(''); setNewHash('')
-    setToast('已添加 Cookie'); setTimeout(() => setToast(''), 1500)
+    showToast('已添加 Cookie', 1500)
+  }
+
+  const importFromQr = (payload: { cookie: string; name: string }) => {
+    addCookie(payload.name, payload.cookie)
+    const added = useSettingsStore.getState().cookies.find(c => c.hash === payload.cookie.trim())
+    if (added) setActiveCookie(added.id)
+    showToast(`已导入 ${payload.name || 'Cookie'}`, 2000)
   }
 
   const handleCheckUpdate = () => {
@@ -157,7 +174,16 @@ export default function SettingsPage() {
 
       <Section title="账户">
         <div className="px-4 py-3 border-b border-divider">
-          <div className="text-sm text-default-700 mb-2">Cookies</div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm text-default-700">Cookies</div>
+            <button
+              type="button"
+              onClick={() => setQrOpen(true)}
+              className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg text-accent hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-colors"
+            >
+              <QrCode size={14} />扫码导入
+            </button>
+          </div>
           <div className="space-y-2">
             {cookies.length === 0 && (
               <div className="text-xs text-muted py-2">尚未添加 Cookie，发帖/回复与受限内容将不可用。</div>
@@ -189,7 +215,7 @@ export default function SettingsPage() {
             <div className="flex gap-1.5">
               <input value={newHash} onChange={(e) => setNewHash(e.target.value)} placeholder="userhash"
                 className="flex-1 px-2.5 py-1.5 text-xs font-mono rounded-lg bg-default-100 text-foreground focus:outline-none focus:ring-2 focus:ring-accent border-none min-w-0" />
-              <Button size="sm" variant="primary" onPress={addNewCookie} isDisabled={!newHash.trim()}>
+              <Button size="sm" variant="primary" onPress={addNewCookie}>
                 <PlusCircle size={14} />添加
               </Button>
             </div>
@@ -229,6 +255,13 @@ export default function SettingsPage() {
           {toast}
         </div>
       )}
+
+      <CookieQrScanner
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        onImport={importFromQr}
+        onError={(msg) => showToast(msg)}
+      />
     </div>
   )
 }

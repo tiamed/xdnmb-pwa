@@ -146,10 +146,11 @@ export default function NavBar() {
               style={{ color: fav ? 'var(--color-warning)' : undefined }}>
               <Star size={14} fill={fav ? 'currentColor' : 'none'} />
             </Button>
-            <button onClick={() => useThreadViewStore.getState().setReplyOpen(true)}
-              className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] text-accent font-medium hover:bg-accent-50 dark:hover:bg-accent-900/20">
-              <Reply size={12} />回复
-            </button>
+            <Button isIconOnly variant="ghost" size="sm"
+              onPress={() => useThreadViewStore.getState().setReplyOpen(true)}
+              aria-label="回复">
+              <Reply size={14} />
+            </Button>
           </div>
         )}
 

@@ -42,7 +42,7 @@ export default function ReferencePopup({ currentTid }: { currentTid: string }) {
   )
   const sameThread = !!targetTid && targetTid === currentTid
 
-  const { data: exists, isLoading: checking } = useQuery({
+  const { data: exists, isLoading: checking, isFetched, isError } = useQuery({
     queryKey: ['threadExists', targetTid],
     queryFn: () => threadExists(targetTid),
     enabled: !!postId && !!data && !!targetTid && !sameThread,
@@ -50,8 +50,10 @@ export default function ReferencePopup({ currentTid }: { currentTid: string }) {
     retry: false,
   })
 
-  const showOriginalBtn = !!data && (sameThread || exists === true)
-  const originalPending = !!data && !sameThread && checking
+  // 仅在确认可跳转时再展示按钮，避免「先出后藏」造成 footer 闪动
+  const showOriginalBtn =
+    !!data && (sameThread || exists === true || (isFetched && isError))
+  const awaitingCheck = !!data && !sameThread && checking
 
   const close = () => setReferencePostId(null)
 
@@ -85,16 +87,21 @@ export default function ReferencePopup({ currentTid }: { currentTid: string }) {
             {error && <p className="text-danger text-sm text-center py-4">加载失败</p>}
             {data && <PostItem post={data} showReply={false} />}
           </Drawer.Body>
-          {(showOriginalBtn || originalPending) && (
+          {(showOriginalBtn || awaitingCheck) && (
             <Drawer.Footer>
-              <Button
-                className="w-full"
-                isDisabled={isLoading || !showOriginalBtn || originalPending}
-                onPress={showOriginal}
-              >
-                <ExternalLink size={15} />
-                {originalPending ? '检查原串…' : '显示原串'}
-              </Button>
+              {showOriginalBtn ? (
+                <Button
+                  className="w-full animate-[fadeSlideIn_.15s_ease-out]"
+                  isDisabled={isLoading}
+                  onPress={showOriginal}
+                >
+                  <ExternalLink size={15} />
+                  显示原串
+                </Button>
+              ) : (
+                // 预留与按钮同高的占位，校验完成后再淡入按钮或撤掉占位
+                <div className="h-10 w-full" aria-hidden />
+              )}
             </Drawer.Footer>
           )}
         </Drawer.Dialog>
