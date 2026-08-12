@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Home, Star, Clock, Settings } from 'lucide-react'
 
 const tabs = [
@@ -10,13 +10,23 @@ const tabs = [
 
 export default function BottomNav({ activeTab }: { activeTab: string }) {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-lg border-t border-divider safe-bottom" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <div className="flex items-center h-12 max-w-lg mx-auto">
         {tabs.map(({ id, label, Icon, path }) => {
           const active = activeTab === id
           return (
-            <button key={id} onClick={() => navigate(path)}
+            <button
+              key={id}
+              onClick={() => {
+                // Root tabs must not stack in history — back should exit the PWA,
+                // not cycle through previously visited tabs.
+                if (pathname !== path) {
+                  navigate(path, { replace: true })
+                }
+              }}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 h-full transition-colors ${
                 active ? 'text-accent' : 'text-default-400 hover:text-default-600'
               }`}>

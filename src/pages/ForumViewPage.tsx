@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { RefreshCw, AlertTriangle, Send, X, Image as ImageIcon } from 'lucide-react'
@@ -6,11 +6,13 @@ import { Button } from '@heroui/react'
 import { useInfiniteForumThreads, useForumList, usePostThread } from '../hooks/useApi'
 import ThreadCard from '../components/ThreadCard'
 import { ListSkeleton } from '../components/Skeleton'
+import EmoticonPicker from '../components/EmoticonPicker'
 import { useSettingsStore } from '../store/settings'
 import { useForumViewStore } from '../store/forumView'
 import { useHistoryStore } from '../store/history'
 import { getActiveUserHash } from '../store/settings'
 import { stripHtml, truncateText } from '../hooks/useUtils'
+import { insertAtCursor } from '../data/emoticons'
 
 export default function ForumViewPage() {
   const { id } = useParams<{ id: string }>()
@@ -106,6 +108,7 @@ function CreateThreadPopup({
   const [watermark, setWatermark] = useState(false)
   const [toast, setToast] = useState('')
   const [imagePreview, setImagePreview] = useState('')
+  const contentRef = useRef<HTMLTextAreaElement>(null)
   const hasUserHash = !!getActiveUserHash()
 
   useEffect(() => {
@@ -162,8 +165,15 @@ function CreateThreadPopup({
           <input value={email} onChange={e => setEmail(e.target.value)} placeholder="邮箱（可选）"
             className="flex-1 px-3 py-2.5 text-sm rounded-xl bg-default-100 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent border-none" />
         </div>
-        <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="输入正文…" rows={5} autoFocus
-          className="w-full px-3 py-2.5 text-sm rounded-xl bg-default-100 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-none border-none" />
+        <textarea
+          ref={contentRef}
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          placeholder="输入正文…"
+          rows={5}
+          autoFocus
+          className="w-full px-3 py-2.5 text-sm rounded-xl bg-default-100 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-none border-none"
+        />
 
         {imagePreview && (
           <div className="mt-2 relative">
@@ -174,6 +184,19 @@ function CreateThreadPopup({
 
         <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
           <div className="flex items-center gap-3">
+            <EmoticonPicker
+              onPick={(em) => {
+                const el = contentRef.current
+                const start = el?.selectionStart ?? content.length
+                const end = el?.selectionEnd ?? start
+                const { value, caret } = insertAtCursor(content, em, start, end)
+                setContent(value)
+                requestAnimationFrame(() => {
+                  el?.focus()
+                  el?.setSelectionRange(caret, caret)
+                })
+              }}
+            />
             <label className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-lg bg-default-100 text-foreground hover:bg-default-200 cursor-pointer transition-colors">
               <ImageIcon size={15} />
               <span>图片</span>

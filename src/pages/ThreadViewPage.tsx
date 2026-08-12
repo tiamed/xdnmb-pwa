@@ -9,10 +9,12 @@ import PostItem from '../components/PostItem'
 import ReferencePopup from '../components/ReferencePopup'
 import { ListSkeleton } from '../components/Skeleton'
 import PullRefreshIndicator from '../components/PullRefreshIndicator'
+import EmoticonPicker from '../components/EmoticonPicker'
 import { useThreadViewStore } from '../store/threadView'
 import { useThreadProgressStore } from '../store/threadProgress'
 import { useHistoryStore } from '../store/history'
 import { resolveForumName, stripHtml, truncateText } from '../hooks/useUtils'
+import { insertAtCursor } from '../data/emoticons'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import type { Post, Thread } from '../types/api'
 
@@ -47,6 +49,7 @@ export default function ThreadViewPage() {
   const setFocusPostId = useThreadViewStore(s => s.setFocusPostId)
   const [replyContent, setReplyContent] = useState('')
   const [toast, setToast] = useState('')
+  const replyTextareaRef = useRef<HTMLTextAreaElement>(null)
   const { addHistory } = useHistoryStore()
   const replyMutation = useReplyThread()
   const queryClient = useQueryClient()
@@ -619,6 +622,7 @@ export default function ThreadViewPage() {
               </div>
             )}
             <textarea
+              ref={replyTextareaRef}
               value={replyContent}
               onChange={e => setReplyContent(e.target.value)}
               placeholder="输入回复…"
@@ -626,24 +630,39 @@ export default function ThreadViewPage() {
               autoFocus
               className="w-full px-3 py-2.5 text-sm rounded-xl bg-default-100 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-none border-none"
             />
-            <div className="flex justify-end gap-2 mt-3">
-              <button
-                onClick={() => { setReplyOpen(false); setReplyContent(''); setReplyTo(null) }}
-                className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors"
-              >
-                取消
-              </button>
-              <button
-                onClick={submitReply}
-                disabled={replyMutation.isPending || !replyContent.trim()}
-                className="px-5 py-2 text-sm bg-accent text-accent-foreground rounded-xl hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-1.5 active:scale-95"
-              >
-                {replyMutation.isPending ? (
-                  <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />发送中</>
-                ) : (
-                  <><Reply size={15} />发送</>
-                )}
-              </button>
+            <div className="flex items-center justify-between gap-2 mt-3">
+              <EmoticonPicker
+                onPick={(em) => {
+                  const el = replyTextareaRef.current
+                  const start = el?.selectionStart ?? replyContent.length
+                  const end = el?.selectionEnd ?? start
+                  const { value, caret } = insertAtCursor(replyContent, em, start, end)
+                  setReplyContent(value)
+                  requestAnimationFrame(() => {
+                    el?.focus()
+                    el?.setSelectionRange(caret, caret)
+                  })
+                }}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setReplyOpen(false); setReplyContent(''); setReplyTo(null) }}
+                  className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={submitReply}
+                  disabled={replyMutation.isPending || !replyContent.trim()}
+                  className="px-5 py-2 text-sm bg-accent text-accent-foreground rounded-xl hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-1.5 active:scale-95"
+                >
+                  {replyMutation.isPending ? (
+                    <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />发送中</>
+                  ) : (
+                    <><Reply size={15} />发送</>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
