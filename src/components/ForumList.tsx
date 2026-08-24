@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useForumList, useTimelineList } from '../hooks/useApi'
 import type { Forum } from '../types/api'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { useSettingsStore } from '../store/settings'
 
 interface ForumListProps {
@@ -75,6 +75,22 @@ export default function ForumList({ onSelect }: ForumListProps) {
 
   return (
     <div className="py-1 text-sm">
+      <button
+        type="button"
+        onClick={() => {
+          navigate('/jump')
+          onSelect?.()
+        }}
+        className={`w-full flex items-center gap-2 px-3 py-2.5 transition-colors ${
+          loc.pathname === '/jump'
+            ? 'text-accent font-medium bg-accent-50 dark:bg-accent-900/20'
+            : 'text-default-700 hover:bg-default-100'
+        }`}
+      >
+        <Search size={16} />
+        <span className="font-medium">跳转详情</span>
+      </button>
+
       {hasTimelines && (
         <div>
           <button

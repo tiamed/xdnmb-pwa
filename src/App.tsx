@@ -11,6 +11,7 @@ import ThreadViewPage from './pages/ThreadViewPage'
 import TimelinePage from './pages/TimelinePage'
 import FavoritesPage from './pages/FavoritesPage'
 import HistoryPage from './pages/HistoryPage'
+import JumpThreadPage from './pages/JumpThreadPage'
 import SettingsPage from './pages/SettingsPage'
 
 function App() {
@@ -66,6 +67,7 @@ function App() {
           <Route path="/timeline/:id" element={<TimelinePage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/history" element={<HistoryPage />} />
+          <Route path="/jump" element={<JumpThreadPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">

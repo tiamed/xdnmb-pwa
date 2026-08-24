@@ -43,6 +43,7 @@ export default function NavBar() {
   const isForum = loc.pathname.startsWith('/f/')
   const isTimeline = loc.pathname.startsWith('/timeline/')
   const isHome = loc.pathname === '/'
+  const isJump = loc.pathname === '/jump'
   const isFeed = isHome || isForum || isTimeline
 
   const goBack = () => {
@@ -61,7 +62,11 @@ export default function NavBar() {
     const text = snippet ? `${snippet}\n${url}` : url
     try {
       if (navigator.share) {
-        await navigator.share({ title: threadTitle || `No.${tid}`, text })
+        const title = threadTitle.trim()
+        await navigator.share({
+          ...(title && title !== '无标题' ? { title } : {}),
+          text,
+        })
         return
       }
     } catch (err) {
@@ -124,6 +129,7 @@ export default function NavBar() {
     }
     if (isForum) return forumName || `版块 ${forumId}`
     if (isHome || isTimeline) return timelineName || '时间线'
+    if (isJump) return '跳转详情'
     if (loc.pathname.startsWith('/favorites')) return `收藏 (${favCount})`
     if (loc.pathname.startsWith('/history')) return `历史 (${historyCount})`
     if (loc.pathname.startsWith('/settings')) return '设置'
@@ -137,7 +143,7 @@ export default function NavBar() {
       onPointerUp={onHeaderPointerUp}
     >
       <div className="flex items-center h-12 px-2 gap-1 max-w-3xl mx-auto w-full">
-        {isFeed && (
+        {(isFeed || isJump) && (
           <Button
             isIconOnly
             variant="ghost"
