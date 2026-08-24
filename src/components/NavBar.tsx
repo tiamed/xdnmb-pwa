@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type MouseEvent, type PointerEvent } from 'react'
+import { useState, useRef, useEffect, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, BookOpen, Menu, Share2 } from 'lucide-react'
 import { Button } from '@heroui/react'
@@ -20,7 +20,7 @@ export default function NavBar() {
     if (!pageOpen) return
     const popup = pageBtnRef.current?.closest('.relative')?.querySelector('.absolute')
     if (!popup) return
-    const handler = (e: MouseEvent) => {
+    const handler = (e: Event) => {
       if (!pageBtnRef.current?.contains(e.target as Node) && !popup.contains(e.target as Node)) setPageOpen(false)
     }
     setTimeout(() => document.addEventListener('click', handler), 0)
@@ -96,7 +96,7 @@ export default function NavBar() {
     if (key) useListScrollStore.getState().clear(key)
   }
 
-  const onHeaderDoubleActivate = (e: MouseEvent | PointerEvent) => {
+  const onHeaderDoubleActivate = (e: ReactMouseEvent | ReactPointerEvent) => {
     if (!isFeed) return
     const t = e.target as HTMLElement
     if (t.closest('button, a, input')) return
@@ -104,7 +104,7 @@ export default function NavBar() {
   }
 
   /** Mobile double-tap (dblclick is unreliable on many touch browsers). */
-  const onHeaderPointerUp = (e: PointerEvent) => {
+  const onHeaderPointerUp = (e: ReactPointerEvent) => {
     if (!isFeed || e.pointerType === 'mouse') return
     const t = e.target as HTMLElement
     if (t.closest('button, a, input')) return
