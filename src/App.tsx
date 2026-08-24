@@ -22,7 +22,11 @@ function App() {
   useLayoutEffect(() => {
     // These routes restore their own scroll position
     if (location.pathname.startsWith('/t/')) return
-    if (location.pathname === '/' || location.pathname.startsWith('/timeline/')) return
+    if (
+      location.pathname === '/'
+      || location.pathname.startsWith('/timeline/')
+      || location.pathname.startsWith('/f/')
+    ) return
     mainRef.current?.scrollTo(0, 0)
   }, [location.pathname])
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { RefreshCw, AlertTriangle, Send, X, Image as ImageIcon } from 'lucide-react'
@@ -13,6 +13,8 @@ import { useHistoryStore } from '../store/history'
 import { getActiveUserHash } from '../store/settings'
 import { stripHtml, truncateText } from '../hooks/useUtils'
 import { insertAtCursor } from '../data/emoticons'
+import { useListScrollRestore } from '../hooks/useListScrollRestore'
+import { rememberListItem } from '../store/listScroll'
 
 export default function ForumViewPage() {
   const { id } = useParams<{ id: string }>()
@@ -30,6 +32,16 @@ export default function ForumViewPage() {
 
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error, refetch } = useInfiniteForumThreads(forumId)
   const threads = data?.pages.flat() ?? []
+  const itemIds = useMemo(() => threads.map(t => t.id), [threads])
+  const scrollKey = `forum:${forumId}`
+
+  useListScrollRestore(scrollKey, !isLoading && !!forumId && threads.length > 0, {
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    contentKey: threads.length,
+    itemIds,
+  })
 
   useEffect(() => {
     if (!autoLoadNext || !hasNextPage || isFetchingNextPage) return
@@ -39,6 +51,22 @@ export default function ForumViewPage() {
     el.addEventListener('scroll', h, { passive: true })
     return () => el.removeEventListener('scroll', h)
   }, [autoLoadNext, hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  const openThread = (thread: (typeof threads)[number]) => {
+    rememberListItem(scrollKey, thread.id)
+    addHistory({
+      id: thread.id,
+      title: thread.title || '无标题',
+      forumName,
+      forumId,
+      preview: truncateText(stripHtml(thread.content), 100),
+      img: thread.img,
+      ext: thread.ext,
+      replyCount: Number(thread.ReplyCount || 0),
+      visitedAt: Date.now(),
+    })
+    nav(`/t/${thread.id}`)
+  }
 
   if (error) return (
     <div className="page-enter flex flex-col items-center justify-center py-20">
@@ -53,10 +81,12 @@ export default function ForumViewPage() {
       {isLoading ? <ListSkeleton count={8} /> : (
         <div>
           {threads.map(thread => (
-            <ThreadCard key={thread.id} thread={thread} forumName={forumName} onOpen={() => {
-              addHistory({ id: thread.id, title: thread.title || '无标题', forumName, forumId, preview: truncateText(stripHtml(thread.content), 100), img: thread.img, ext: thread.ext, replyCount: Number(thread.ReplyCount || 0), visitedAt: Date.now() })
-              nav(`/t/${thread.id}`)
-            }} />
+            <ThreadCard
+              key={thread.id}
+              thread={thread}
+              forumName={forumName}
+              onOpen={() => openThread(thread)}
+            />
           ))}
           <div className="p-4 text-center text-sm text-muted">
             {isFetchingNextPage ? '加载中…' : !hasNextPage && threads.length > 0 ? '— 没有更多了 —' : !autoLoadNext && hasNextPage ? (
