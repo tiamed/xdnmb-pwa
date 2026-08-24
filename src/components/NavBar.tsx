@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type MouseEvent, type PointerEvent } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Eye, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, BookOpen, Menu } from 'lucide-react'
+import { ArrowLeft, Reply, Trash2, PencilLine, Search as SearchIcon, ChevronLeft, ChevronRight, Star, BookOpen, Menu, Share2 } from 'lucide-react'
 import { Button } from '@heroui/react'
 import { useFeedCount, useForumList, useIsInFeed, useTimelineList, useToggleFeed } from '../hooks/useApi'
 import { useThreadViewStore } from '../store/threadView'
 import { useForumViewStore } from '../store/forumView'
 import { useHistoryStore } from '../store/history'
 import { useSettingsStore } from '../store/settings'
+import { useListScrollStore } from '../store/listScroll'
 
 export default function NavBar() {
   const nav = useNavigate()
@@ -14,6 +15,7 @@ export default function NavBar() {
   const [pageOpen, setPageOpen] = useState(false)
   const [pageInput, setPageInput] = useState('')
   const pageBtnRef = useRef<HTMLButtonElement>(null)
+  const lastHeaderTapRef = useRef(0)
   useEffect(() => {
     if (!pageOpen) return
     const popup = pageBtnRef.current?.closest('.relative')?.querySelector('.absolute')
@@ -27,7 +29,7 @@ export default function NavBar() {
   const isThread = loc.pathname.startsWith('/t/')
   const tid = isThread ? loc.pathname.split('/')[2] : ''
   const poOnly = loc.search.includes('po=1')
-  const { currentPage, totalPages, setJumpToPage, threadTitle } = useThreadViewStore()
+  const { currentPage, totalPages, setJumpToPage, threadTitle, threadPreview } = useThreadViewStore()
   const { data: forumGroups } = useForumList()
   const { data: timelines } = useTimelineList()
   const fav = useIsInFeed(tid)
@@ -52,6 +54,26 @@ export default function NavBar() {
     nav('/', { replace: true })
   }
 
+  const shareThread = async () => {
+    if (!tid) return
+    const url = `https://www.nmbxd.com/t/${tid}`
+    const snippet = threadPreview.trim()
+    const text = snippet ? `${snippet}\n${url}` : url
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: threadTitle || `No.${tid}`, text })
+        return
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
+    }
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      /* ignore */
+    }
+  }
+
   const forumId = isForum ? loc.pathname.split('/')[2] : ''
   let forumName = ''
   if (forumGroups) for (const g of forumGroups) { const f = g.forums.find(f => f.id === forumId); if (f) { forumName = f.name; break } }
@@ -65,6 +87,34 @@ export default function NavBar() {
   if (timelines && timelineId) {
     const t = timelines.find(tl => String(tl.id) === String(timelineId))
     if (t) timelineName = t.display_name || t.name
+  }
+
+  const scrollFeedToTop = () => {
+    if (!isFeed) return
+    document.getElementById('main-scroll-container')?.scrollTo({ top: 0, behavior: 'smooth' })
+    const key = isForum ? `forum:${forumId}` : timelineId ? `timeline:${timelineId}` : ''
+    if (key) useListScrollStore.getState().clear(key)
+  }
+
+  const onHeaderDoubleActivate = (e: MouseEvent | PointerEvent) => {
+    if (!isFeed) return
+    const t = e.target as HTMLElement
+    if (t.closest('button, a, input')) return
+    scrollFeedToTop()
+  }
+
+  /** Mobile double-tap (dblclick is unreliable on many touch browsers). */
+  const onHeaderPointerUp = (e: PointerEvent) => {
+    if (!isFeed || e.pointerType === 'mouse') return
+    const t = e.target as HTMLElement
+    if (t.closest('button, a, input')) return
+    const now = Date.now()
+    if (now - lastHeaderTapRef.current < 320) {
+      lastHeaderTapRef.current = 0
+      scrollFeedToTop()
+    } else {
+      lastHeaderTapRef.current = now
+    }
   }
 
   const title = (() => {
@@ -81,7 +131,11 @@ export default function NavBar() {
   })()
 
   return (
-    <header className="shrink-0 z-40 bg-background/90 backdrop-blur-md">
+    <header
+      className="shrink-0 z-40 bg-background/90 backdrop-blur-md"
+      onDoubleClick={onHeaderDoubleActivate}
+      onPointerUp={onHeaderPointerUp}
+    >
       <div className="flex items-center h-12 px-2 gap-1 max-w-3xl mx-auto w-full">
         {isFeed && (
           <Button
@@ -108,7 +162,7 @@ export default function NavBar() {
           <div className="flex items-center gap-0.5 shrink-0">
             <button onClick={() => nav(`${loc.pathname}${poOnly ? '' : '?po=1'}`, { replace: true })}
               className={`flex items-center gap-0.5 px-1.5 py-1 rounded-lg text-[11px] transition-all ${poOnly ? 'bg-accent text-accent-foreground' : 'text-muted hover:bg-default-100'}`}>
-              <Eye size={12} />PO
+              PO
             </button>
             <div className="relative">
               <button ref={pageBtnRef} onClick={() => { setPageOpen(p => !p); setPageInput(String(currentPage)) }}
@@ -150,6 +204,11 @@ export default function NavBar() {
               onPress={() => useThreadViewStore.getState().setReplyOpen(true)}
               aria-label="回复">
               <Reply size={14} />
+            </Button>
+            <Button isIconOnly variant="ghost" size="sm"
+              onPress={() => { void shareThread() }}
+              aria-label="分享">
+              <Share2 size={14} />
             </Button>
           </div>
         )}

@@ -14,11 +14,14 @@ import { getActiveUserHash } from '../store/settings'
 import { stripHtml, truncateText } from '../hooks/useUtils'
 import { insertAtCursor } from '../data/emoticons'
 import { useListScrollRestore } from '../hooks/useListScrollRestore'
-import { rememberListItem } from '../store/listScroll'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
+import { rememberListItem, useListScrollStore } from '../store/listScroll'
+import PullRefreshIndicator from '../components/PullRefreshIndicator'
 
 export default function ForumViewPage() {
   const { id } = useParams<{ id: string }>()
   const nav = useNavigate()
+  const ptrRef = useRef<HTMLDivElement>(null)
   const { data: forumGroups } = useForumList()
   const { autoLoadNext } = useSettingsStore()
   const { addHistory } = useHistoryStore()
@@ -41,6 +44,16 @@ export default function ForumViewPage() {
     fetchNextPage,
     contentKey: threads.length,
     itemIds,
+  })
+
+  usePullToRefresh({
+    enabled: !!forumId && !isLoading,
+    indicatorRef: ptrRef,
+    onRefresh: async () => {
+      useListScrollStore.getState().clear(scrollKey)
+      document.getElementById('main-scroll-container')?.scrollTo({ top: 0 })
+      await refetch()
+    },
   })
 
   useEffect(() => {
@@ -77,7 +90,8 @@ export default function ForumViewPage() {
   )
 
   return (
-    <div className="min-h-full page-enter">
+    <div className="min-h-full page-enter select-none">
+      <PullRefreshIndicator ref={ptrRef} />
       {isLoading ? <ListSkeleton count={8} /> : (
         <div>
           {threads.map(thread => (
@@ -85,6 +99,7 @@ export default function ForumViewPage() {
               key={thread.id}
               thread={thread}
               forumName={forumName}
+              showStar={false}
               onOpen={() => openThread(thread)}
             />
           ))}

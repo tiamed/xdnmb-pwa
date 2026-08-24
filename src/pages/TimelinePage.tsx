@@ -57,7 +57,7 @@ export default function TimelinePage() {
   if (error) return <div className="py-20 text-center text-danger text-sm">加载失败</div>
 
   return (
-    <div className="min-h-full page-enter">
+    <div className="min-h-full page-enter select-none">
       <PullRefreshIndicator ref={ptrRef} />
       {isLoading ? <ListSkeleton count={6} /> : (
         <div>

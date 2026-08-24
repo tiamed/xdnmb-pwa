@@ -44,6 +44,7 @@ export default function ThreadViewPage() {
   const setTotalPages = useThreadViewStore(s => s.setTotalPages)
   const setJumpToPage = useThreadViewStore(s => s.setJumpToPage)
   const setThreadTitle = useThreadViewStore(s => s.setThreadTitle)
+  const setThreadPreview = useThreadViewStore(s => s.setThreadPreview)
   const jumpTarget = useThreadViewStore(s => s.jumpToPage)
   const focusPostId = useThreadViewStore(s => s.focusPostId)
   const setFocusPostId = useThreadViewStore(s => s.setFocusPostId)
@@ -422,6 +423,7 @@ export default function ThreadViewPage() {
         visitedAt: Date.now(),
       })
       setThreadTitle(thread.title || '无标题')
+      setThreadPreview(truncateText(stripHtml(thread.content), 40))
     }
   }, [!!thread, forumGroups])
 

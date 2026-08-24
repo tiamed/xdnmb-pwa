@@ -99,7 +99,7 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="min-h-full page-enter">
+    <div className="min-h-full page-enter select-none">
       <PullRefreshIndicator ref={ptrRef} />
       {searchMode && (
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md px-3 py-2 border-b border-divider">
@@ -110,7 +110,7 @@ export default function FavoritesPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜索订阅…"
               autoFocus
-              className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted focus:outline-none border-none"
+              className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted focus:outline-none border-none select-text"
             />
             <button onClick={closeSearch} className="text-muted hover:text-foreground p-1">
               <X size={16} />

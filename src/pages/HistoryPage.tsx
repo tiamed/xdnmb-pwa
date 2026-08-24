@@ -45,13 +45,13 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="min-h-full page-enter">
+    <div className="min-h-full page-enter select-none">
       {searchMode && (
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md px-3 py-2 border-b border-divider">
           <div className="flex items-center gap-2">
             <SearchIcon size={16} className="text-muted shrink-0" />
             <input value={searchQuery} onChange={e => { const v = e.target.value; setSearchQuery(v) }} placeholder="搜索历史…" autoFocus
-              className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted focus:outline-none border-none" />
+              className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted focus:outline-none border-none select-text" />
             <button onClick={closeSearch} className="text-muted hover:text-foreground p-1"><X size={16} /></button>
           </div>
         </div>

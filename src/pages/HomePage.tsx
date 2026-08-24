@@ -85,7 +85,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-full page-enter">
+    <div className="min-h-full page-enter select-none">
       <PullRefreshIndicator ref={ptrRef} />
       {isLoading || !tlId ? (
         <ListSkeleton count={6} />

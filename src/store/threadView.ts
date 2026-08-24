@@ -19,6 +19,9 @@ interface ThreadViewState {
   setJumpToPage: (page: number) => void
   threadTitle: string
   setThreadTitle: (title: string) => void
+  /** Plain-text snippet of the OP for share */
+  threadPreview: string
+  setThreadPreview: (preview: string) => void
 }
 
 export const useThreadViewStore = create<ThreadViewState>((set) => ({
@@ -40,4 +43,6 @@ export const useThreadViewStore = create<ThreadViewState>((set) => ({
   setJumpToPage: (jumpToPage) => set({ jumpToPage }),
   threadTitle: '',
   setThreadTitle: (threadTitle) => set({ threadTitle }),
+  threadPreview: '',
+  setThreadPreview: (threadPreview) => set({ threadPreview }),
 }))
