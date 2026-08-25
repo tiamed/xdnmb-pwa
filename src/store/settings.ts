@@ -3,7 +3,6 @@ import { persist } from 'zustand/middleware'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type ImageMode = 'default' | 'hidden' | 'blur'
-export type ReplySort = 'asc' | 'desc'
 
 export interface UserCookie {
   id: string
@@ -14,8 +13,9 @@ export interface UserCookie {
 interface SettingsState {
   theme: ThemeMode
   imageMode: ImageMode
-  replySort: ReplySort
   autoLoadNext: boolean
+  /** 音量键上下翻页（按视口高度滚动列表） */
+  volumeKeyPaging: boolean
   showSpoiler: boolean
   feedUuid: string
   /** 首页时间线 id；空则用列表第一项 */
@@ -24,8 +24,8 @@ interface SettingsState {
   activeCookieId: string | null
   setTheme: (theme: ThemeMode) => void
   setImageMode: (mode: ImageMode) => void
-  setReplySort: (sort: ReplySort) => void
   setAutoLoadNext: (v: boolean) => void
+  setVolumeKeyPaging: (v: boolean) => void
   setShowSpoiler: (v: boolean) => void
   setFeedUuid: (uuid: string) => void
   setHomeTimelineId: (id: string) => void
@@ -43,8 +43,8 @@ export const useSettingsStore = create<SettingsState>()(
     (set, get) => ({
       theme: 'system',
       imageMode: 'default',
-      replySort: 'asc',
       autoLoadNext: true,
+      volumeKeyPaging: true,
       showSpoiler: false,
       feedUuid: '',
       homeTimelineId: '',
@@ -56,8 +56,8 @@ export const useSettingsStore = create<SettingsState>()(
         get().applyTheme()
       },
       setImageMode: (imageMode) => set({ imageMode }),
-      setReplySort: (replySort) => set({ replySort }),
       setAutoLoadNext: (autoLoadNext) => set({ autoLoadNext }),
+      setVolumeKeyPaging: (volumeKeyPaging) => set({ volumeKeyPaging }),
       setShowSpoiler: (showSpoiler) => set({ showSpoiler }),
       setFeedUuid: (feedUuid) => set({ feedUuid }),
       setHomeTimelineId: (homeTimelineId) => set({ homeTimelineId }),
@@ -98,8 +98,8 @@ export const useSettingsStore = create<SettingsState>()(
       partialize: (state) => ({
         theme: state.theme,
         imageMode: state.imageMode,
-        replySort: state.replySort,
         autoLoadNext: state.autoLoadNext,
+        volumeKeyPaging: state.volumeKeyPaging,
         showSpoiler: state.showSpoiler,
         feedUuid: state.feedUuid,
         homeTimelineId: state.homeTimelineId,

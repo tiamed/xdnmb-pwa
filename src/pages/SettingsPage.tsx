@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useSettingsStore, type ImageMode, type ReplySort } from '../store/settings'
+import { useSettingsStore, type ImageMode } from '../store/settings'
 import { getApiBaseUrl, setApiBase, getFeed } from '../api/client'
 import { Button } from '@heroui/react'
 import { Sun, Moon, Monitor, RefreshCw, Trash2, PlusCircle, Check, QrCode } from 'lucide-react'
@@ -8,8 +8,9 @@ import CookieQrScanner from '../components/CookieQrScanner'
 
 export default function SettingsPage() {
   const {
-    theme, setTheme, imageMode, setImageMode, replySort, setReplySort,
+    theme, setTheme, imageMode, setImageMode,
     autoLoadNext, setAutoLoadNext,
+    volumeKeyPaging, setVolumeKeyPaging,
     feedUuid, setFeedUuid,
     cookies, activeCookieId,
     addCookie, updateCookie, removeCookie, setActiveCookie,
@@ -154,11 +155,8 @@ export default function SettingsPage() {
         <Row label="自动翻页">
           <ToggleSwitch checked={autoLoadNext} onChange={setAutoLoadNext} />
         </Row>
-        <Row label="回复排序">
-          <select value={replySort} onChange={e => setReplySort(e.target.value as ReplySort)}
-            className="px-2.5 py-1.5 text-sm rounded-lg bg-default-100 text-foreground border-none focus:ring-2 focus:ring-accent outline-none">
-            <option value="asc">正序</option><option value="desc">倒序</option>
-          </select>
+        <Row label="音量键翻页">
+          <ToggleSwitch checked={volumeKeyPaging} onChange={setVolumeKeyPaging} />
         </Row>
       </Section>
 
