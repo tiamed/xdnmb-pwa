@@ -110,10 +110,11 @@ export default function ForumSidebar() {
   })
 
   return createPortal(
-    <div className="fixed inset-0 z-[60]" aria-hidden={!open}>
+    // Root must be pointer-events-none when closed — fixed inset-0 would otherwise eat all touches
+    <div className="fixed inset-0 z-[60] pointer-events-none" aria-hidden={!open}>
       {/* Backdrop — only interactive when open */}
       <animated.div
-        className="absolute inset-0 bg-black/30"
+        className="absolute inset-0 bg-black/30 pointer-events-auto"
         style={{
           opacity: progress,
           pointerEvents: open ? 'auto' : 'none',
@@ -125,7 +126,7 @@ export default function ForumSidebar() {
       {/* Left edge hit area to start opening when closed */}
       {!open && (
         <div
-          className="absolute left-0 top-0 bottom-0 z-[1] touch-none"
+          className="absolute left-0 top-0 bottom-0 z-[1] touch-none pointer-events-auto"
           style={{ width: EDGE_PX }}
           aria-hidden
           {...bind()}
@@ -136,7 +137,7 @@ export default function ForumSidebar() {
         role="dialog"
         aria-modal={open}
         aria-label="切换版块"
-        className="absolute left-0 top-0 bottom-0 max-w-[85vw] bg-background shadow-xl flex flex-col touch-pan-y"
+        className="absolute left-0 top-0 bottom-0 max-w-[85vw] bg-background shadow-xl flex flex-col touch-pan-y pointer-events-auto"
         style={{
           width,
           x,
