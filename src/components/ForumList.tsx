@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useForumList, useTimelineList } from '../hooks/useApi'
 import type { Forum } from '../types/api'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { useSettingsStore } from '../store/settings'
+import {
+  listScrollKeyFromPath,
+  requestListTop,
+  saveCurrentListScroll,
+} from '../store/listScroll'
 
 interface ForumListProps {
   onSelect?: () => void
@@ -12,6 +18,7 @@ interface ForumListProps {
 export default function ForumList({ onSelect }: ForumListProps) {
   const navigate = useNavigate()
   const loc = useLocation()
+  const queryClient = useQueryClient()
   const { data: forumGroups, isLoading } = useForumList()
   const { data: timelines } = useTimelineList()
   const homeTimelineId = useSettingsStore(s => s.homeTimelineId)
@@ -47,13 +54,30 @@ export default function ForumList({ onSelect }: ForumListProps) {
     })
   }
 
+  /** Clear target list position and reload from page 1; keep current list scroll for back-restore. */
+  const prepareSwitch = (targetKey: string, queryKey: readonly unknown[]) => {
+    const currentKey = listScrollKeyFromPath(loc.pathname, homeTimelineId)
+    if (currentKey && currentKey !== targetKey) {
+      saveCurrentListScroll(currentKey)
+    }
+    requestListTop(targetKey)
+    void queryClient.resetQueries({ queryKey: [...queryKey] })
+    // Same list key: restore won't re-run, so scroll immediately
+    if (currentKey === targetKey) {
+      document.getElementById('main-scroll-container')?.scrollTo({ top: 0 })
+    }
+  }
+
   const handleForum = (f: Forum) => {
-    navigate(`/f/${f.id}`)
+    const sid = String(f.id)
+    prepareSwitch(`forum:${sid}`, ['forumThreads', sid])
+    navigate(`/f/${sid}`)
     onSelect?.()
   }
 
   const handleTimeline = (id: number | string) => {
     const sid = String(id)
+    prepareSwitch(`timeline:${sid}`, ['timelineThreads', sid])
     setHomeTimelineId(sid)
     navigate('/')
     onSelect?.()

@@ -10,7 +10,6 @@ export default function SettingsPage() {
   const {
     theme, setTheme, imageMode, setImageMode,
     autoLoadNext, setAutoLoadNext,
-    volumeKeyPaging, setVolumeKeyPaging,
     feedUuid, setFeedUuid,
     cookies, activeCookieId,
     addCookie, updateCookie, removeCookie, setActiveCookie,
@@ -154,9 +153,6 @@ export default function SettingsPage() {
         </Row>
         <Row label="自动翻页">
           <ToggleSwitch checked={autoLoadNext} onChange={setAutoLoadNext} />
-        </Row>
-        <Row label="音量键翻页">
-          <ToggleSwitch checked={volumeKeyPaging} onChange={setVolumeKeyPaging} />
         </Row>
       </Section>
 

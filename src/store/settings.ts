@@ -14,8 +14,6 @@ interface SettingsState {
   theme: ThemeMode
   imageMode: ImageMode
   autoLoadNext: boolean
-  /** 音量键上下翻页（按视口高度滚动列表） */
-  volumeKeyPaging: boolean
   showSpoiler: boolean
   feedUuid: string
   /** 首页时间线 id；空则用列表第一项 */
@@ -25,7 +23,6 @@ interface SettingsState {
   setTheme: (theme: ThemeMode) => void
   setImageMode: (mode: ImageMode) => void
   setAutoLoadNext: (v: boolean) => void
-  setVolumeKeyPaging: (v: boolean) => void
   setShowSpoiler: (v: boolean) => void
   setFeedUuid: (uuid: string) => void
   setHomeTimelineId: (id: string) => void
@@ -44,7 +41,6 @@ export const useSettingsStore = create<SettingsState>()(
       theme: 'system',
       imageMode: 'default',
       autoLoadNext: true,
-      volumeKeyPaging: true,
       showSpoiler: false,
       feedUuid: '',
       homeTimelineId: '',
@@ -57,7 +53,6 @@ export const useSettingsStore = create<SettingsState>()(
       },
       setImageMode: (imageMode) => set({ imageMode }),
       setAutoLoadNext: (autoLoadNext) => set({ autoLoadNext }),
-      setVolumeKeyPaging: (volumeKeyPaging) => set({ volumeKeyPaging }),
       setShowSpoiler: (showSpoiler) => set({ showSpoiler }),
       setFeedUuid: (feedUuid) => set({ feedUuid }),
       setHomeTimelineId: (homeTimelineId) => set({ homeTimelineId }),
@@ -99,7 +94,6 @@ export const useSettingsStore = create<SettingsState>()(
         theme: state.theme,
         imageMode: state.imageMode,
         autoLoadNext: state.autoLoadNext,
-        volumeKeyPaging: state.volumeKeyPaging,
         showSpoiler: state.showSpoiler,
         feedUuid: state.feedUuid,
         homeTimelineId: state.homeTimelineId,

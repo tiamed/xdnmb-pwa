@@ -2,7 +2,6 @@ import { useLayoutEffect, useEffect, useRef } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { SearchX } from 'lucide-react'
 import { useSettingsStore } from './store/settings'
-import { useVolumeKeyPaging } from './hooks/useVolumeKeyPaging'
 import NavBar from './components/NavBar'
 import BottomNav from './components/BottomNav'
 import ForumSidebar from './components/ForumSidebar'
@@ -18,9 +17,6 @@ import SettingsPage from './pages/SettingsPage'
 function App() {
   const location = useLocation()
   const mainRef = useRef<HTMLElement>(null)
-  const volumeKeyPaging = useSettingsStore(s => s.volumeKeyPaging)
-
-  useVolumeKeyPaging(volumeKeyPaging)
 
   useLayoutEffect(() => { useSettingsStore.getState().applyTheme() }, [])
 

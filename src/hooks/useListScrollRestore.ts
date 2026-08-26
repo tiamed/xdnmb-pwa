@@ -54,6 +54,13 @@ export function useListScrollRestore(
     const el = getScrollEl()
     if (!el) return
 
+    // Sidebar (etc.) asked to open this list at the top
+    if (useListScrollStore.getState().consumeReset(key)) {
+      el.scrollTop = 0
+      restoreDoneRef.current = true
+      return
+    }
+
     const saved = useListScrollStore.getState().get(key)
     if (!saved || (!saved.itemId && saved.scrollTop <= 0)) {
       restoreDoneRef.current = true
