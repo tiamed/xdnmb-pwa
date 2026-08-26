@@ -49,13 +49,27 @@ export function useInfiniteForumThreads(forumId: string) {
 }
 
 // 时间线串列表 - infinite
+// 上游 timeline 约从第 20 页起开始返回同一页内容，需硬性截断
+const TIMELINE_MAX_PAGE = 20
+
+function isSameThreadPage(a: { id?: string }[], b: { id?: string }[]) {
+  if (a.length !== b.length) return false
+  return a.every((t, i) => String(t.id) === String(b[i]?.id))
+}
+
 export function useInfiniteTimelineThreads(timelineId: string) {
   return useInfiniteQuery({
     queryKey: ['timelineThreads', timelineId],
     queryFn: ({ pageParam }) => getTimelineThreads(timelineId, pageParam),
     initialPageParam: 1,
-    getNextPageParam: (lastPage, _all, lastPageParam) =>
-      lastPage.length > 0 ? lastPageParam + 1 : undefined,
+    getNextPageParam: (lastPage, allPages, lastPageParam) => {
+      if (!lastPage?.length) return undefined
+      if (lastPageParam >= TIMELINE_MAX_PAGE) return undefined
+      // 兜底：源站卡在末页时会重复返回相同列表
+      const prev = allPages[allPages.length - 2]
+      if (prev && isSameThreadPage(prev, lastPage)) return undefined
+      return lastPageParam + 1
+    },
     enabled: !!timelineId,
     staleTime: 1000 * 30,
   })
