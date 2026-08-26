@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useLocation } from 'react-router-dom'
 import { useDrag } from '@use-gesture/react'
 import { useSpring, animated, to } from '@react-spring/web'
 import { useForumViewStore } from '../store/forumView'
@@ -15,19 +16,37 @@ function panelWidth() {
   return Math.min(PANEL_MAX, window.innerWidth * 0.85)
 }
 
+/** Home bottom-tab routes that own the forum sidebar swipe-open. */
+function isHomeTabPath(pathname: string) {
+  return (
+    pathname === '/'
+    || pathname.startsWith('/f/')
+    || pathname.startsWith('/timeline/')
+  )
+}
+
+/** Routes where the drawer may stay open (hamburger on feed + jump). */
+function canKeepSidebar(pathname: string) {
+  return isHomeTabPath(pathname) || pathname.startsWith('/jump')
+}
+
 export default function ForumSidebar() {
+  const location = useLocation()
   const open = useForumViewStore(s => s.sidebarOpen)
   const setSidebarOpen = useForumViewStore(s => s.setSidebarOpen)
+  const allowOpenGesture = isHomeTabPath(location.pathname)
 
   const [width, setWidth] = useState(panelWidth)
   const [contentReady, setContentReady] = useState(open)
   const openRef = useRef(open)
   const widthRef = useRef(width)
+  const allowOpenRef = useRef(allowOpenGesture)
   const dragStartX = useRef(0)
   const draggingRef = useRef(false)
 
   openRef.current = open
   widthRef.current = width
+  allowOpenRef.current = allowOpenGesture
 
   const [{ x }, api] = useSpring(() => ({
     x: open ? 0 : -panelWidth(),
@@ -56,6 +75,11 @@ export default function ForumSidebar() {
     api.start({ x: open ? 0 : -width })
   }, [open, width, api])
 
+  // Leave feed/jump → close drawer
+  useEffect(() => {
+    if (!canKeepSidebar(location.pathname) && open) setSidebarOpen(false)
+  }, [location.pathname, open, setSidebarOpen])
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -82,9 +106,8 @@ export default function ForumSidebar() {
   }, [api, setSidebarOpen])
 
   /**
-   * Open gesture: listen on document in capture phase.
-   * A left-edge hit div under pointer-events-none ancestors is unreliable on mobile;
-   * document capture always sees the touch regardless of stacking.
+   * Open gesture: document capture, home-tab only.
+   * Hit-area divs under pointer-events-none ancestors are unreliable on mobile.
    */
   useEffect(() => {
     let tracking = false
@@ -96,6 +119,7 @@ export default function ForumSidebar() {
     let vx = 0
 
     const onStart = (e: TouchEvent) => {
+      if (!allowOpenRef.current) return
       if (openRef.current || draggingRef.current) return
       if (e.touches.length !== 1) return
       const t = e.touches[0]
@@ -166,7 +190,7 @@ export default function ForumSidebar() {
     }
   }, [finishDrag])
 
-  // Close: drag on panel / backdrop (use-gesture is fine once the panel is interactive)
+  // Close: drag on panel only (backdrop uses click — avoids tap/filterTaps conflicts)
   const bindClose = useDrag(
     ({ first, last, active, movement: [mx], velocity: [vx], direction: [dirX], canceled }) => {
       if (!openRef.current) return
@@ -207,15 +231,15 @@ export default function ForumSidebar() {
   })
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] pointer-events-none" aria-hidden={!open}>
+    <div
+      className={`fixed inset-0 z-[60] ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
+      aria-hidden={!open}
+    >
       <animated.div
         className="absolute inset-0 bg-black/30"
-        style={{
-          opacity: progress,
-          pointerEvents: open ? 'auto' : 'none',
-        }}
+        style={{ opacity: progress }}
         onClick={close}
-        {...(open ? bindClose() : {})}
+        onPointerDown={e => e.stopPropagation()}
       />
 
       <animated.aside
@@ -229,6 +253,7 @@ export default function ForumSidebar() {
           pointerEvents: open ? 'auto' : 'none',
           touchAction: 'pan-y',
         }}
+        onClick={e => e.stopPropagation()}
         {...(open ? bindClose() : {})}
       >
         <div
